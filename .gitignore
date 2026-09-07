@@ -62,3 +62,6 @@ server.log
 db/*.db
 sandbox/
 .zscripts/dev.pid
+
+# local git bundle export (push fallback artifact)
+download/*.bundle
