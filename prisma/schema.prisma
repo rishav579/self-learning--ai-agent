@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// Self-Improving Agent — persistent schema
+// ============================================================
+
+model Task {
+  id              String    @id @default(cuid())
+  title           String
+  input           String
+  // full | no_memory | memory_only | memory_reflection
+  mode            String    @default("full")
+  // pending|understanding|retrieving|planning|executing|evaluating|reflecting|storing|completed|failed
+  status          String    @default("pending")
+  error           String?
+  // JSON: task understanding (goal, category, keywords, risk, complexity)
+  understanding   String?
+  // JSON: retrieved lessons + experiences summary
+  retrievedMemory String?
+  // JSON: selected strategy + stats
+  selectedStrategy String?
+  // JSON: structured plan
+  plan            String?
+  // JSON: objective check specs supplied by the submitter
+  checks          String?
+  result          String?
+  score           Float?
+  success         Boolean?
+  strategyName    String?
+  iterations      Int       @default(0)
+  llmCalls        Int       @default(0)
+  benchmarkRunId  String?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  experiences    Experience[]
+  lessonsCreated Lesson[]     @relation("SourceTask")
+  toolExecutions ToolExecution[]
+  evaluations    Evaluation[]
+  events         AgentEvent[]
+}
+
+model Experience {
+  id                String   @id @default(cuid())
+  taskId            String
+  task              Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskSummary       String
+  category          String   @default("general")
+  context           String
+  actionsSummary    String   @default("[]") // JSON array of action summaries
+  outcome           String
+  score             Float    @default(0)
+  success           Boolean  @default(false)
+  successfulApproach String?
+  failedApproach    String?
+  strategyName      String?
+  lessonId          String?
+  lesson            Lesson?  @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  // JSON array of retrieval keywords
+  keywords          String   @default("[]")
+  createdAt         DateTime @default(now())
+
+  @@index([category])
+  @@index([taskId])
+}
+
+model Lesson {
+  id             String   @id @default(cuid())
+  content        String
+  // success | failure
+  type           String   @default("success")
+  confidence     Float    @default(0.5)
+  strategyName   String?
+  category       String   @default("general")
+  // JSON array of applicability keywords
+  keywords       String   @default("[]")
+  sourceTaskId   String?
+  sourceTask     Task?    @relation("SourceTask", fields: [sourceTaskId], references: [id], onDelete: SetNull)
+  useCount       Int      @default(0)
+  helpfulCount   Int      @default(0)
+  notHelpfulCount Int     @default(0)
+  refinements    Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  experiences    Experience[]
+
+  @@index([category])
+}
+
+model Strategy {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String
+  category    String   @default("general")
+  uses        Int      @default(0)
+  successes   Int      @default(0)
+  totalScore  Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+}
+
+model ToolExecution {
+  id         String   @id @default(cuid())
+  taskId     String
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tool       String
+  args       String   @default("{}") // JSON
+  result     String?  // JSON (truncated)
+  success    Boolean
+  durationMs Int
+  error      String?
+  createdAt  DateTime @default(now())
+
+  @@index([taskId])
+}
+
+model Evaluation {
+  id        String   @id @default(cuid())
+  taskId    String   @unique
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  objective Boolean  @default(true)
+  checks    String   @default("[]") // JSON: [{name, passed, detail, weight}]
+  score     Float    @default(0)
+  success   Boolean  @default(false)
+  summary   String   @default("")
+  createdAt DateTime @default(now())
+}
+
+model AgentEvent {
+  id         String   @id @default(cuid())
+  taskId     String?
+  task       Task?    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  // task_started|understanding|memory_retrieved|strategy_selected|plan_created|
+  // iteration|tool_call|tool_result|evaluation|reflection|lesson_stored|
+  // strategy_updated|experience_stored|task_completed|task_failed|error
+  type       String
+  payload    String   @default("{}") // JSON
+  durationMs Int?
+  createdAt  DateTime @default(now())
+
+  @@index([taskId])
+}
+
+model BenchmarkRun {
+  id        String   @id @default(cuid())
+  taskSet   String
+  // JSON array of mode names executed, in order
+  modes     String   @default("[]")
+  // JSON: { mode: { perTask: [{taskId, title, score, success, iterations, llmCalls, durationMs}], meanScore, successRate, toolCalls } }
+  results   String   @default("{}")
+  status    String   @default("pending") // pending|running|completed|failed
+  error     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

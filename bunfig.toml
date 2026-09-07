@@ -1,0 +1,4 @@
+[include]
+# include Next.js app + lib files in typecheck context
+[test]
+preload = ["./tests/setup.ts"]
