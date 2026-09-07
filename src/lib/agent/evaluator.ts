@@ -248,22 +248,16 @@ Judge strictly whether the answer actually satisfies the task.`,
 
 /** Persist an evaluation row. */
 export async function persistEvaluation(taskId: string, evaluation: EvaluationResult): Promise<void> {
+  const data = {
+    objective: evaluation.objective,
+    checks: JSON.stringify(evaluation.checks),
+    score: evaluation.score,
+    success: evaluation.success,
+    summary: evaluation.summary.slice(0, 2000),
+  }
   await db.evaluation.upsert({
     where: { taskId },
-    create: {
-      taskId,
-      objective: evaluation.objective,
-      checks: JSON.stringify(evaluation.checks),
-      score: evaluation.score,
-      success: evaluation.success,
-      summary: evaluation.summary.slice(0, 2000),
-    },
-    update: {
-      objective: evaluation.objective,
-      checks: JSON.stringify(evaluation.checks),
-      score: evaluation.score,
-      success: evaluation.success,
-      summary: evaluation.summary.slice(0, 2000),
-    },
+    create: { taskId, ...data },
+    update: data,
   })
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { ACTIVE_TASK_STATUSES } from '@/lib/agent/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,7 +11,7 @@ export async function GET() {
       db.lesson.count(),
       db.experience.count(),
       db.strategy.count(),
-      db.task.count({ where: { status: { in: ['pending', 'understanding', 'retrieving', 'planning', 'executing', 'evaluating', 'reflecting', 'storing'] } } }),
+      db.task.count({ where: { status: { in: [...ACTIVE_TASK_STATUSES] } } }),
     ])
     return NextResponse.json({
       status: 'ok',

@@ -20,6 +20,7 @@
  */
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
+import { round3 } from '@/lib/api-helpers'
 import { runAgentTask } from './orchestrator'
 import { BENCHMARK_MODE_ORDER, getBenchmarkSet } from './presets'
 import type { AgentMode } from './types'
@@ -183,8 +184,4 @@ async function runBenchmark(
     data: { status: 'completed', results: JSON.stringify(results) },
   })
   logger.info('benchmark:completed', { runId, modes: modes.join(','), durationMs: Date.now() - startedAt })
-}
-
-function round3(n: number): number {
-  return Math.round(n * 1000) / 1000
 }

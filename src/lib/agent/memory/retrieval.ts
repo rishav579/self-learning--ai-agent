@@ -35,7 +35,7 @@ export function tokenize(text: string): string[] {
 }
 
 /** Term-frequency map. */
-export function termFreq(tokens: string[]): Map<string, number> {
+function termFreq(tokens: string[]): Map<string, number> {
   const tf = new Map<string, number>()
   for (const t of tokens) tf.set(t, (tf.get(t) ?? 0) + 1)
   return tf
@@ -144,6 +144,12 @@ export async function retrieveRelevantMemory(
         type: l.type,
         confidence: l.confidence,
         similarity: Math.round(Math.min(Math.max(score, 0), 1) * 1000) / 1000,
+        // usage stats travel WITH the lesson so prompt rendering needs no
+        // second DB query (they cannot change between retrieval and planning
+        // within one task — usage is only recorded at task end)
+        useCount: l.useCount,
+        helpfulCount: l.helpfulCount,
+        notHelpfulCount: l.notHelpfulCount,
         source: 'lesson' as const,
         _raw: l,
       }
@@ -182,20 +188,16 @@ export async function retrieveRelevantMemory(
  * Render retrieved memory as a compact prompt block for the planner/executor.
  * Includes usage statistics so the model knows how trustworthy a lesson is.
  */
-export async function renderMemoryForPrompt(memory: RetrievedMemory): Promise<string> {
+export function renderMemoryForPrompt(memory: RetrievedMemory): string {
   if (memory.lessons.length === 0 && memory.experiences.length === 0) {
     return 'No relevant past experience found. You are solving this type of task for the first time.'
   }
   const lines: string[] = []
   if (memory.lessons.length > 0) {
-    const lessonRows = await db.lesson.findMany({
-      where: { id: { in: memory.lessons.map((l) => l.id) } },
-    })
-    const byId = new Map(lessonRows.map((l) => [l.id, l]))
     lines.push('RELEVANT LESSONS from past tasks (apply them unless clearly inapplicable):')
     for (const l of memory.lessons) {
-      const row = byId.get(l.id)
-      const track = row ? ` [applied ${row.useCount}x, helpful ${row.helpfulCount}/${row.helpfulCount + row.notHelpfulCount}, confidence ${(row.confidence * 100).toFixed(0)}%]` : ''
+      const uses = l.helpfulCount + l.notHelpfulCount
+      const track = ` [applied ${l.useCount}x, helpful ${l.helpfulCount}/${uses}, confidence ${(l.confidence * 100).toFixed(0)}%]`
       lines.push(`- (${l.type}) ${l.content}${track}`)
     }
   }

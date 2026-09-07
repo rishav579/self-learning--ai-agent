@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { safeJson } from '@/lib/api-helpers'
+import { runnerStats } from '@/lib/agent/runner'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -36,7 +37,6 @@ export async function GET(request: Request) {
  */
 export async function DELETE() {
   try {
-    const { runnerStats } = await import('@/lib/agent/runner')
     const { running, queued } = runnerStats()
     if (running > 0 || queued > 0) {
       return NextResponse.json(

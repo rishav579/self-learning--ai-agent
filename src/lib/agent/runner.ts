@@ -19,13 +19,10 @@
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { runAgentTask } from './orchestrator'
+import { IN_FLIGHT_STATUSES } from './types'
 import type { AgentMode } from './types'
 
 const MAX_QUEUE_DEPTH = 8
-
-const IN_FLIGHT_STATUSES = [
-  'understanding', 'retrieving', 'planning', 'executing', 'evaluating', 'reflecting', 'storing',
-]
 
 const g = globalThis as unknown as {
   __agentRecoveryDone?: boolean

@@ -110,11 +110,11 @@ export function isTransientError(message: string): boolean {
 }
 
 /**
- * Aggressive backoff for rate limits: 10s, 20s, 40s, capped 60s.
+ * Backoff for rate limits: 10s, 20s, 40s, capped 60s.
  * The upstream API throttles long-running workloads hard; short backoffs
  * just burn retries inside the same throttle window.
  */
-export function backoffMs(attempt: number, transient: boolean): number {
+function backoffMs(attempt: number, transient: boolean): number {
   const base = transient ? 10_000 : 500
   return Math.min(base * Math.pow(2, attempt - 1), 60_000)
 }

@@ -130,36 +130,6 @@ export const HARD_BENCHMARK: PresetTask[] = [
   },
 ]
 
-export interface PresetDemoTask {
-  title: string
-  input: string
-  checks: CheckSpec[]
-}
-
-/** One-click demo tasks shown as chips in the UI. */
-export const DEMO_PRESETS: PresetDemoTask[] = [
-  {
-    title: 'Hard multiplication (learn to use calculator)',
-    input: 'Compute 4659 * 8831 and report the exact integer result.',
-    checks: [{ name: 'exact product', type: 'numeric_match', expected: '41143629' }],
-  },
-  {
-    title: 'Read sandbox file',
-    input: 'Read the notes file in the agent sandbox and report the deployment environment.',
-    checks: [{ name: 'environment', type: 'output_contains', expected: 'staging' }],
-  },
-  {
-    title: 'Compute Fibonacci',
-    input: 'Execute JavaScript code that computes the 20th Fibonacci number (F(1)=1, F(2)=1) and report the value.',
-    checks: [{ name: 'fib(20)', type: 'numeric_match', expected: '6765' }],
-  },
-  {
-    title: 'Open-ended task (subjective evaluation)',
-    input: 'Search the web for who won the most recent FIFA World Cup and write a two-sentence summary with the final score.',
-    checks: [],
-  },
-]
-
 export function getBenchmarkSet(name: string): PresetTask[] {
   if (name === 'quick') return QUICK_BENCHMARK
   if (name === 'hard') return HARD_BENCHMARK

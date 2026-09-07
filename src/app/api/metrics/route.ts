@@ -1,12 +1,9 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { round3 } from '@/lib/api-helpers'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
-
-function round3(n: number): number {
-  return Math.round(n * 1000) / 1000
-}
 
 /**
  * Improvement metrics over the task sequence (mode `full` by default):

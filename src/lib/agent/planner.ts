@@ -33,7 +33,7 @@ export async function createPlan(
   ctx: PlanContext,
   llm: LlmClient,
 ): Promise<Plan> {
-  const memoryBlock = ctx.memory ? await renderMemoryForPrompt(ctx.memory) : 'Memory disabled for this run.'
+  const memoryBlock = ctx.memory ? renderMemoryForPrompt(ctx.memory) : 'Memory disabled for this run.'
   const catalog = getToolCatalog()
     .map((t) => `- ${t.name}: ${t.description}\n  args example: ${t.argsShape}`)
     .join('\n')

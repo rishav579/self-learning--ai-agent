@@ -22,14 +22,17 @@ export type AgentMode =
   | 'memory_reflection' // C: + lesson extraction & retrieval
   | 'full' // D: + strategy tracking & selection
 
-export const AGENT_MODES: AgentMode[] = ['no_memory', 'memory_only', 'memory_reflection', 'full']
+/**
+ * Statuses of a task that has STARTED but not reached a terminal state.
+ * Single source of truth for the runner's restart recovery and the health
+ * endpoint's active-task count.
+ */
+export const IN_FLIGHT_STATUSES: TaskStatus[] = [
+  'understanding', 'retrieving', 'planning', 'executing', 'evaluating', 'reflecting', 'storing',
+]
 
-export const MODE_LABELS: Record<AgentMode, string> = {
-  no_memory: 'A · No memory',
-  memory_only: 'B · Memory',
-  memory_reflection: 'C · Memory + Reflection',
-  full: 'D · Memory + Reflection + Strategy',
-}
+/** Every non-terminal status (pending + in-flight). */
+export const ACTIVE_TASK_STATUSES: TaskStatus[] = ['pending', ...IN_FLIGHT_STATUSES]
 
 export interface ModeCapabilities {
   retrieveExperiences: boolean
@@ -181,6 +184,10 @@ export interface RetrievedLesson {
   type: string
   confidence: number
   similarity: number
+  /** usage evidence carried from retrieval time so prompts need no re-query */
+  useCount: number
+  helpfulCount: number
+  notHelpfulCount: number
   source: 'lesson'
 }
 

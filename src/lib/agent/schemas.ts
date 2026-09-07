@@ -105,8 +105,6 @@ export const CreateTaskSchema = z.object({
   mode: z.enum(['no_memory', 'memory_only', 'memory_reflection', 'full']).optional(),
 })
 
-export type CreateTaskInput = z.infer<typeof CreateTaskSchema>
-
 export const RunBenchmarkSchema = z.object({
   taskSet: z.enum(['default', 'quick', 'hard']).optional(),
   modes: z
@@ -115,5 +113,3 @@ export const RunBenchmarkSchema = z.object({
     .max(4)
     .optional(),
 })
-
-export type RunBenchmarkInput = z.infer<typeof RunBenchmarkSchema>

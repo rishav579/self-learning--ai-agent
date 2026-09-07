@@ -51,6 +51,21 @@ export async function storeExperience(input: StoreExperienceInput) {
     }
   }
 
+  // shared field set: the merge branch only swaps which row it lands in
+  // (and keeps the original taskSummary of the first occurrence)
+  const data = {
+    context: input.context.slice(0, 1000),
+    actionsSummary: JSON.stringify(input.actionsSummary.slice(0, 20)),
+    outcome: input.outcome.slice(0, 1000),
+    score: input.score,
+    success: input.success,
+    successfulApproach: input.successfulApproach?.slice(0, 800) ?? null,
+    failedApproach: input.failedApproach?.slice(0, 800) ?? null,
+    strategyName: input.strategyName ?? null,
+    lessonId: input.lessonId ?? null,
+    keywords: JSON.stringify(input.keywords.slice(0, 12)),
+  }
+
   if (duplicate) {
     // merge: refresh outcome/score on the existing row instead of creating
     // a near-copy (the latest run is the most representative)
@@ -58,16 +73,7 @@ export async function storeExperience(input: StoreExperienceInput) {
       where: { id: duplicate.id },
       data: {
         taskId: input.taskId,
-        context: input.context.slice(0, 1000),
-        actionsSummary: JSON.stringify(input.actionsSummary.slice(0, 20)),
-        outcome: input.outcome.slice(0, 1000),
-        score: input.score,
-        success: input.success,
-        successfulApproach: input.successfulApproach?.slice(0, 800) ?? null,
-        failedApproach: input.failedApproach?.slice(0, 800) ?? null,
-        strategyName: input.strategyName ?? null,
-        lessonId: input.lessonId ?? null,
-        keywords: JSON.stringify(input.keywords.slice(0, 12)),
+        ...data,
       },
     })
     logger.info('memory:experience-merged', { taskId: input.taskId, experienceId: merged.id })
@@ -79,16 +85,7 @@ export async function storeExperience(input: StoreExperienceInput) {
       taskId: input.taskId,
       taskSummary: input.taskSummary.slice(0, 500),
       category: input.category || 'general',
-      context: input.context.slice(0, 1000),
-      actionsSummary: JSON.stringify(input.actionsSummary.slice(0, 20)),
-      outcome: input.outcome.slice(0, 1000),
-      score: input.score,
-      success: input.success,
-      successfulApproach: input.successfulApproach?.slice(0, 800) ?? null,
-      failedApproach: input.failedApproach?.slice(0, 800) ?? null,
-      strategyName: input.strategyName ?? null,
-      lessonId: input.lessonId ?? null,
-      keywords: JSON.stringify(input.keywords.slice(0, 12)),
+      ...data,
     },
   })
 }
@@ -118,40 +115,43 @@ export async function storeLesson(
     orderBy: { updatedAt: 'desc' },
   })
 
-  let best: { id: string; sim: number } | null = null
+  let best: (typeof candidates)[number] | null = null
+  let bestSim = 0
   for (const c of candidates) {
     const sim = Math.max(cosineSimilarity(contentTokens, tokenize(c.content)), jaccardSimilarity(contentTokens, tokenize(c.content)))
-    if (!best || sim > best.sim) best = { id: c.id, sim }
+    if (!best || sim > bestSim) {
+      best = c
+      bestSim = sim
+    }
   }
 
-  if (best && best.sim >= DEDUP_SIMILARITY) {
-    // Merge: reinforce confidence, keep the more specific content, bump stats
-    const existing = await db.lesson.findUnique({ where: { id: best.id } })
-    if (existing) {
-      const newConfidence = Math.min(1, Math.max(existing.confidence, reflection.lesson.confidence) + 0.05)
-      let mergedKeywords: string[]
-      try {
-        mergedKeywords = Array.isArray(JSON.parse(existing.keywords || '[]')) ? JSON.parse(existing.keywords) : []
-      } catch {
-        mergedKeywords = [] // corrupted keywords field — recover by replacing
-      }
-      mergedKeywords = Array.from(new Set([...mergedKeywords, ...reflection.lesson.keywords])).slice(0, 12)
-      await db.lesson.update({
-        where: { id: existing.id },
-        data: {
-          confidence: newConfidence,
-          refinements: { increment: 1 },
-          keywords: JSON.stringify(mergedKeywords),
-          strategyName: reflection.lesson.strategyName ?? existing.strategyName,
-          updatedAt: new Date(),
-          // a reinforced lesson gets a fresh chance even if it was retired
-          // (the new evidence may supersede the old failure statistics)
-          retired: false,
-        },
-      })
-      logger.info('memory:lesson-merged', { taskId: sourceTaskId, lessonId: existing.id, similarity: Math.round(best.sim * 100) / 100 })
-      return { lessonId: existing.id, deduplicated: true, similarity: best.sim }
+  if (best && bestSim >= DEDUP_SIMILARITY) {
+    // Merge: reinforce confidence, keep the more specific content, bump stats.
+    // `best` is already the full lesson row — no second fetch needed.
+    const existing = best
+    const newConfidence = Math.min(1, Math.max(existing.confidence, reflection.lesson.confidence) + 0.05)
+    let mergedKeywords: string[]
+    try {
+      mergedKeywords = Array.isArray(JSON.parse(existing.keywords || '[]')) ? JSON.parse(existing.keywords) : []
+    } catch {
+      mergedKeywords = [] // corrupted keywords field — recover by replacing
     }
+    mergedKeywords = Array.from(new Set([...mergedKeywords, ...reflection.lesson.keywords])).slice(0, 12)
+    await db.lesson.update({
+      where: { id: existing.id },
+      data: {
+        confidence: newConfidence,
+        refinements: { increment: 1 },
+        keywords: JSON.stringify(mergedKeywords),
+        strategyName: reflection.lesson.strategyName ?? existing.strategyName,
+        updatedAt: new Date(),
+        // a reinforced lesson gets a fresh chance even if it was retired
+        // (the new evidence may supersede the old failure statistics)
+        retired: false,
+      },
+    })
+    logger.info('memory:lesson-merged', { taskId: sourceTaskId, lessonId: existing.id, similarity: Math.round(bestSim * 100) / 100 })
+    return { lessonId: existing.id, deduplicated: true, similarity: bestSim }
   }
 
   const lesson = await db.lesson.create({
@@ -166,7 +166,7 @@ export async function storeLesson(
     },
   })
   logger.info('memory:lesson-stored', { taskId: sourceTaskId, lessonId: lesson.id })
-  return { lessonId: lesson.id, deduplicated: false, similarity: best?.sim ?? 0 }
+  return { lessonId: lesson.id, deduplicated: false, similarity: bestSim }
 }
 
 /**

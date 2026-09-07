@@ -96,6 +96,9 @@ export async function executeTask(
 
   const baseContext = `TASK: ${taskInput}\n\nUnderstanding: category=${understanding.category}, risk=${understanding.riskLevel}\n\n${memoryBlock}\n${strategyBlock ? '\n' + strategyBlock + '\n' : ''}\nPLAN:\n${plan.steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}`
 
+  // static per task: the tool catalog cannot change mid-run — build once
+  const systemPrompt = buildSystemPrompt()
+
   let llmRetries = 0
   for (let i = 0; i < MAX_ITERATIONS; i++) {
     trace.iterations = i + 1
@@ -103,7 +106,7 @@ export async function executeTask(
     try {
       action = await llm.chatJson<ExecutorAction>({
         label: 'execute',
-        system: buildSystemPrompt(),
+        system: systemPrompt,
         prompt: `${baseContext}\n\nTRANSCRIPT SO FAR:\n${renderTranscript(trace)}\n\nProduce your NEXT action as a single JSON object.`,
         shapeHint: `{"action":"tool","tool":"tool_name","args":{...},"thought":"short reasoning"} OR {"action":"final","answer":"final answer text","thought":"short reasoning"}`,
         schema: ExecutorActionSchema,
