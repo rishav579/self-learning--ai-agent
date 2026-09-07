@@ -61,3 +61,4 @@ server.log
 *.log
 db/*.db
 sandbox/
+.zscripts/dev.pid
