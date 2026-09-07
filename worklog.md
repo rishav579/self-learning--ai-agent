@@ -111,3 +111,24 @@ Stage Summary:
 - System survives: empty/long/malformed inputs, unknown tools, invalid args, timeouts, 429 storms, DB corruption, restarts mid-task, concurrent bursts (load shedding verified: 8 accepted / 4 rejected 429)
 - Hard v1 benchmark honestly showed the ceiling; v2 (convention trap) designed to make memory matter — pending API quota recovery to run
 - Remaining: v2 benchmark run + failure-learning demo (blocked on LLM quota window), final README numbers, final production rebuild with latest code
+
+---
+Task ID: 4
+Agent: main (Super Z)
+Task: Final audit wrap-up — production verification, deterministic benchmark proof, docs
+
+Work Log:
+- LLM API quota exhausted ~12:05 UTC after v1 benchmark (~150 calls in 40 min); probed every ~10 min for 2h+ — never recovered (long-window quota). Live hard-v2 A/B/C/D + live failure-learning sequence blocked environmentally; documented honestly in README
+- benchmark.ts: interTaskPauseMs injectable for tests
+- tests/benchmark-hard.test.ts (3 tests): deterministic mechanism proof with prompt-aware scripted LLM — A all-traps-fail (cannot know hidden convention), B ≈ A (experiences carry outcomes not causes), C: trap#1 fails → failure lesson stored → traps #2/#3 PASS via retrieved lesson (asserted via event timeline: memory_retrieved with lesson content, result 'ANSWER: 32143993'), D ≥ C + strategy 'answer-prefix-convention' recorded. Learning channel verified (lesson text reached executor prompt only in C/D)
+- safeJson deduplicated → src/lib/api-helpers.ts; scaffold ignoreBuildErrors removed (build now type-checks)
+- Production rebuilt twice (final build includes all changes); standalone server healthy: all API endpoints 200 in <12ms; HTTP validation adversarial checks (empty/long/bad-check/invalid-JSON/bogus-taskSet → 400; unknown id → 404)
+- UI verified on production: 6 tabs, mobile 390×844, failed-task alert, live polling, screenshots saved
+- git commit b7e71c9 (37 files, +2219/−267); no secrets tracked (verified)
+- Real-LLM full-loop evidence extracted from this session's DB: task_started → understanding → memory_retrieved → strategy_selected → plan_created → iterations → evaluation(1.0 objective) → reflection → lesson_stored → experience_stored → strategy_updated → task_completed (lesson: 'use calculator for large-integer multiplication'; strategy: calculator_for_multiplication)
+- Mode B v1 evidence: later tasks retrieved prior successful experiences and plans followed the proven approach (code_executor for fib, calculator for arithmetic) — real behavioral adaptation via memory
+- v1 honest finding #2: mode C trap#2 retrieved ZERO lessons from trap#1 (lexical wording mismatch between near-identical tasks) → motivated + implemented query enrichment (input + goal + keywords)
+
+Stage Summary:
+- FINAL STATE: 175/175 tests, tsc clean, eslint clean, production build + server verified, restart recovery verified E2E, 2 RCEs fixed, memory safeguards in, benchmark v2 mechanism proven deterministically, honest docs
+- Live v2 benchmark remains the single item blocked by external API quota — commands to run it are documented
