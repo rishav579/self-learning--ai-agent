@@ -10,6 +10,13 @@ whether the loop actually helps.
 > statistics change what the planner and executor see, which changes behavior. The UI and this README state
 > this plainly.
 
+> **Release status: Portfolio-ready / hardened MVP — not production-ready.** All 175 tests pass, typecheck
+> and lint are clean, the production build and standalone server are verified, and two real sandbox escapes
+> found during the adversarial audit are fixed and regression-tested. It is still a single-process,
+> single-user demo system: in-memory queue, lexical retrieval, SQLite, no API auth or rate limiting, and
+> `node:vm` is not a hard security boundary. See [Limitations](#limitations-honest-list) before deploying
+> anywhere real.
+
 ---
 
 ## The learning loop
