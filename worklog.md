@@ -152,3 +152,25 @@ Stage Summary:
 - Release candidate PASSES all local gates (tests/typecheck/lint/build/prod boot) and every honesty claim is DB-verified
 - Single release blocker: the GitHub repository is EMPTY — project never pushed; requires credentials the sandbox does not have
 - Final verdict: Portfolio-ready / hardened MVP, conditional on user running: git push -u origin main
+
+---
+Task ID: 6
+Agent: main (Super Z)
+Task: Final lean-code audit (no new features)
+
+Work Log:
+- Phase 1 (audit-only table produced): inspected all 5,334 lines of app code, 48 ui components, routes, tools, tests, scripts, deps
+- Dead files removed (44): 36 unused shadcn ui components (app uses only 12), hooks/use-toast.ts + hooks/use-mobile.ts, examples/websocket/*, mini-services/.gitkeep, 3 unreferenced tests/*.sh scaffold scripts — all verified zero-reference via grep closure analysis
+- Dead exports removed: types.ts AGENT_MODES + MODE_LABELS, presets.ts DEMO_PRESETS + PresetDemoTask (abandoned server-side duplicate of the client's own demo chips), schemas.ts CreateTaskInput + RunBenchmarkInput; un-exported llm.ts backoffMs and retrieval.ts termFreq (internal-only)
+- Dependencies removed: 44 (20 radix pkgs of deleted components, cmdk/embla/input-otp/react-day-picker/react-resizable-panels/vaul, react-hook-form + @hookform/resolvers, and 16 zero-reference pkgs: dnd-kit×3, mdxeditor, reactuses, tanstack query+table, date-fns, framer-motion, next-auth, next-intl, react-markdown, react-syntax-highlighter, sharp, uuid, zustand); bun.lock regenerated, orphaned node_modules dirs pruned; 22 deps remain (all verified used)
+- Duplication removed: task-status list consolidated into types.ts IN_FLIGHT_STATUSES/ACTIVE_TASK_STATUSES (runner + health route now import it; client keeps its own boundary copy); round3 consolidated into api-helpers.ts (benchmark + metrics + strategies routes); storeExperience merge/create share one data literal; persistEvaluation upsert shares one payload; storeLesson uses the candidate row directly (no second findUnique); memory route's dynamic import of runner → static
+- Simplifications: renderMemoryForPrompt now synchronous — usage stats (useCount/helpful/notHelpful) travel with the retrieved lesson (added to RetrievedLesson), eliminating a redundant DB re-query per task; prompt output kept byte-identical; executor builds systemPrompt once instead of per-iteration
+- globals.css: removed 13 sidebar-*/chart-* mappings + 26 var definitions that only served deleted components (122 → 83 lines)
+- Deliberately NOT changed (documented): executor vs planner memory rendering (intentionally different prompt content); MODE_NAMES short chart labels; .zscripts/ + Caddyfile (platform build/proxy coupling — build.sh references them, caddy runs in this workspace); agent layer files not merged (single responsibility each); security-critical files untouched
+- Verification: bun test 175/175 pass (475 expects, 15 files), tsc --noEmit clean, eslint clean, production build clean (14.7s, standalone OK), prod smoke boot: health/memory/strategies/metrics/benchmark/tasks all 200, POST validation 400 enforced, frontend 200
+- Live e2e attempted: real task submitted post-refactor; pipeline stages all executed in order (understanding fail-open → retrieval → strategy → plan) and the task failed CLEANLY on documented 429 API quota with bounded executor retries (5) — graceful degradation verified under real throttling; deterministic full-loop coverage remains in the 175-test suite
+- Committed: 63 files changed, +145/−6478
+
+Stage Summary:
+- Lean audit complete: zero dead code in src/, one source of truth for status lists and rounding, 44 fewer deps, 6,478 lines removed with zero functionality/tests/security lost
+- All quality gates green; working tree clean
