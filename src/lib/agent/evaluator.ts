@@ -33,10 +33,31 @@ function extractNumbers(text: string): number[] {
   return matches.map(Number)
 }
 
+/**
+ * Run a submitter-supplied boolean expression against the result string.
+ *
+ * SECURITY: the expression is model/operator-supplied, so it runs in a
+ * HARDENED vm context (same policy as the code_executor tool):
+ *   - null-prototype sandbox (no host prototype chain on the global)
+ *   - `result` and `numbers` are created INSIDE the context from JSON
+ *     literals — passing host objects (e.g. a host array) would expose
+ *     `numbers.constructor.constructor` → HOST Function → arbitrary code
+ *     execution (verified empirically before this fix)
+ *   - globalThis prototype severed; codeGeneration disabled
+ *   - 1s execution timeout
+ */
 function runJsCheck(expression: string, result: string): { passed: boolean; detail: string } {
   try {
-    const sandbox = { result, numbers: extractNumbers(result) }
-    const context = vm.createContext(sandbox, { codeGeneration: { strings: false, wasm: false } })
+    const numbers = extractNumbers(result)
+    const context = vm.createContext(Object.create(null), {
+      codeGeneration: { strings: false, wasm: false },
+    })
+    // context-native bindings + hardening, all evaluated INSIDE the context
+    vm.runInContext(
+      `Object.setPrototypeOf(globalThis, null); result = ${JSON.stringify(result)}; numbers = ${JSON.stringify(numbers)}`,
+      context,
+      { timeout: 200 },
+    )
     const outcome = new vm.Script(expression, { filename: 'eval-check.js' }).runInContext(context, { timeout: 1000 })
     if (typeof outcome === 'boolean') {
       return { passed: outcome, detail: `js_expression evaluated to ${outcome}` }

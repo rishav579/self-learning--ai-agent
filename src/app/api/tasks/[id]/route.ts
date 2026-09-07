@@ -1,17 +1,9 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { safeJson } from '@/lib/api-helpers'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
-
-function safeJson(s: string | null | undefined): unknown {
-  if (!s) return null
-  try {
-    return JSON.parse(s)
-  } catch {
-    return null
-  }
-}
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {

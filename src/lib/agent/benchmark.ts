@@ -7,12 +7,16 @@
  *   C memory_reflection— + lesson extraction & retrieval
  *   D full             — + strategy selection & statistics
  *
- * IMPORTANT HONESTY NOTE: each mode is executed against the SAME persistent
- * database, sequentially in mode order A→D. Because modes share memory only
- * through the DB, A/B/C/D compare "what the agent could know at that point".
- * The cleanest comparison is a fresh database per benchmark run (the UI
- * offers a "clear memory" reset before running). Results are recorded as
- * they actually happened — no fabrication.
+ * EXPERIMENT DESIGN (honesty notes):
+ *  1. For the `hard` task set, memory is RESET before each mode so every
+ *     mode starts from the same clean state and only accumulates its OWN
+ *     experience. This makes A/B/C/D a controlled comparison of capability
+ *     levels rather than a cumulative sequence where later modes inherit
+ *     earlier modes' memories. (For the legacy default/quick sets the
+ *     original sequential behavior is kept.)
+ *  2. All results are recorded as they actually happened — no fabrication.
+ *  3. Efficiency is measured too (llmCalls, iterations, durationMs) because
+ *     on tasks where score ceilings, memory still shortens discovery.
  */
 import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
@@ -45,22 +49,21 @@ export interface BenchmarkModeResult {
   meanScore: number
   successRate: number
   totalToolCalls: number
+  totalLlmCalls: number
+  meanIterations: number
+  meanDurationMs: number
   totalDurationMs: number
-}
-
-export function isBenchmarkRunning(): Promise<boolean> {
-  return db.benchmarkRun
-    .findFirst({ where: { status: 'running' }, select: { id: true } })
-    .then((r) => r !== null)
 }
 
 /**
  * Launch a benchmark run in the background. Returns the run row immediately.
+ * `interTaskPauseMs` and `llm` are injection points for tests (no network).
  */
 export async function launchBenchmark(opts: {
   taskSet: string
   modes?: AgentMode[]
   llm?: LlmClient
+  interTaskPauseMs?: number
 }): Promise<{ id: string }> {
   const running = await db.benchmarkRun.findFirst({ where: { status: 'running' } })
   if (running) {
@@ -75,7 +78,7 @@ export async function launchBenchmark(opts: {
     },
   })
   // fire and forget — status tracked in the DB
-  void runBenchmark(run.id, opts.taskSet, modes, opts.llm).catch(async (e: Error) => {
+  void runBenchmark(run.id, opts.taskSet, modes, opts.llm, opts.interTaskPauseMs ?? INTER_TASK_PAUSE_MS).catch(async (e: Error) => {
     logger.error('benchmark:crashed', { runId: run.id, error: e.message })
     await db.benchmarkRun.update({
       where: { id: run.id },
@@ -85,21 +88,36 @@ export async function launchBenchmark(opts: {
   return { id: run.id }
 }
 
+async function resetMemory(): Promise<void> {
+  await db.$transaction([
+    db.experience.deleteMany({}),
+    db.lesson.deleteMany({}),
+    db.strategy.deleteMany({}),
+  ])
+}
+
 async function runBenchmark(
   runId: string,
   taskSetName: string,
   modes: AgentMode[],
   injectedLlm?: LlmClient,
+  interTaskPauseMs: number = INTER_TASK_PAUSE_MS,
 ): Promise<void> {
   const tasks = getBenchmarkSet(taskSetName)
   const llm = injectedLlm ?? createLlmClient()
   const results: Partial<Record<AgentMode, BenchmarkModeResult>> = {}
   const startedAt = Date.now()
+  // controlled comparison: each mode starts from a clean memory state
+  const resetBetweenModes = taskSetName === 'hard'
 
   // The whole benchmark goes through the SAME agent mutex as user tasks, so
   // LLM calls are never issued in parallel (rate-limit protection).
   await withAgentLock(async () => {
     for (const mode of modes) {
+      if (resetBetweenModes) {
+        await resetMemory()
+        logger.info('benchmark:memory-reset', { runId, mode })
+      }
       const perTask: BenchmarkPerTask[] = []
       for (const preset of tasks) {
         const task = await db.task.create({
@@ -133,7 +151,7 @@ async function runBenchmark(
           data: { results: JSON.stringify(results) },
         })
         // pacing: let the API rate limiter recover between tasks
-        await new Promise((r) => setTimeout(r, INTER_TASK_PAUSE_MS))
+        await new Promise((r) => setTimeout(r, interTaskPauseMs))
         // if this task was killed by throttling, cool down longer — the API
         // recovers after ~2 quiet minutes (observed empirically)
         if (done?.error && /429|too many requests/i.test(done.error)) {
@@ -141,13 +159,16 @@ async function runBenchmark(
           await new Promise((r) => setTimeout(r, RATE_LIMIT_COOLDOWN_MS))
         }
       }
-      const meanScore = perTask.length > 0 ? round3(perTask.reduce((s, t) => s + t.score, 0) / perTask.length) : 0
+      const n = perTask.length
       results[mode] = {
         mode,
         perTask,
-        meanScore,
-        successRate: perTask.length > 0 ? round3(perTask.filter((t) => t.success).length / perTask.length) : 0,
+        meanScore: n > 0 ? round3(perTask.reduce((s, t) => s + t.score, 0) / n) : 0,
+        successRate: n > 0 ? round3(perTask.filter((t) => t.success).length / n) : 0,
         totalToolCalls: perTask.reduce((s, t) => s + t.toolCalls, 0),
+        totalLlmCalls: perTask.reduce((s, t) => s + t.llmCalls, 0),
+        meanIterations: n > 0 ? round3(perTask.reduce((s, t) => s + t.iterations, 0) / n) : 0,
+        meanDurationMs: n > 0 ? Math.round(perTask.reduce((s, t) => s + t.durationMs, 0) / n) : 0,
         totalDurationMs: Date.now() - startedAt,
       }
       await db.benchmarkRun.update({

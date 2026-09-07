@@ -71,6 +71,65 @@ export const QUICK_BENCHMARK: PresetTask[] = [
   DEFAULT_BENCHMARK[3],
 ]
 
+/**
+ * HARD benchmark (v2) — designed so memory can actually matter.
+ *
+ * HONEST HISTORY: v1 used a bare-integer regex check ("^[0-9]+$") as the
+ * hidden format requirement. Empirically the base LLM ALREADY answers
+ * "Compute X." tasks with a bare number, so mode A passed everything —
+ * a ceiling effect, same as the default set. v1 results are reported as-is.
+ *
+ * v2 uses an OUTPUT-CONVENTION trap instead: the checker requires the final
+ * answer in the exact form "ANSWER: <integer>". Nothing in the task text
+ * reveals this convention, and no natural LLM style produces it, so a
+ * first-time agent objectively fails. The ONLY way to pass later tasks is
+ * to have stored and retrieved the lesson ("the evaluator's convention is
+ * the ANSWER: prefix"). This models real-world output contracts (API
+ * schemas, report formats) and is information the agent genuinely cannot
+ * know without experience. No lesson text is hard-coded into prompts.
+ *
+ * Sandbox-fact tasks remain solvable by all modes but reward memory with
+ * fewer discovery iterations (measured via llmCalls / iterations).
+ */
+export const HARD_BENCHMARK: PresetTask[] = [
+  {
+    title: 'Convention trap #1 (multiplication)',
+    input: 'Compute 4729 * 8371.',
+    checks: [{ name: 'answer follows the evaluator convention', type: 'regex_match', expected: '^ANSWER: [0-9]+$' }],
+  },
+  {
+    title: 'Convention trap #2 (multiplication)',
+    input: 'Compute 6209 * 5177.',
+    checks: [{ name: 'answer follows the evaluator convention', type: 'regex_match', expected: '^ANSWER: [0-9]+$' }],
+  },
+  {
+    title: 'Sandbox fact #1 (discover + read notes)',
+    input: 'What release channel is recorded in the sandbox notes file?',
+    checks: [{ name: 'channel mentioned', type: 'output_contains', expected: 'beta' }],
+  },
+  {
+    title: 'Sandbox fact #2 (nested config + combine values)',
+    input: 'From the sandbox settings file, report timeout_seconds plus retries as a single integer.',
+    checks: [
+      { name: 'combined value', type: 'numeric_match', expected: '33' },
+      { name: 'answer follows the evaluator convention', type: 'regex_match', expected: '^ANSWER: [0-9]+$', weight: 0.5 },
+    ],
+  },
+  {
+    title: 'Algorithm (exact fib(22))',
+    input: 'Compute the 22nd Fibonacci number with F(1)=1 and F(2)=1.',
+    checks: [
+      { name: 'fib(22) value', type: 'numeric_match', expected: '17711' },
+      { name: 'answer follows the evaluator convention', type: 'regex_match', expected: '^ANSWER: [0-9]+$', weight: 0.5 },
+    ],
+  },
+  {
+    title: 'Convention trap #3 (arithmetic)',
+    input: 'Compute (9034 - 2861) * 17.',
+    checks: [{ name: 'answer follows the evaluator convention', type: 'regex_match', expected: '^ANSWER: [0-9]+$' }],
+  },
+]
+
 export interface PresetDemoTask {
   title: string
   input: string
@@ -103,6 +162,7 @@ export const DEMO_PRESETS: PresetDemoTask[] = [
 
 export function getBenchmarkSet(name: string): PresetTask[] {
   if (name === 'quick') return QUICK_BENCHMARK
+  if (name === 'hard') return HARD_BENCHMARK
   return DEFAULT_BENCHMARK
 }
 

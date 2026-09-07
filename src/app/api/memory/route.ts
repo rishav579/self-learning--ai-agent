@@ -1,17 +1,9 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { safeJson } from '@/lib/api-helpers'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
-
-function safeJson(s: string | null | undefined): unknown {
-  if (!s) return null
-  try {
-    return JSON.parse(s)
-  } catch {
-    return null
-  }
-}
 
 export async function GET(request: Request) {
   try {
@@ -39,9 +31,19 @@ export async function GET(request: Request) {
 /**
  * Reset memory (lessons, experiences, strategies) so the learning loop can
  * be demonstrated from a clean slate. Tasks keep their rows but detached.
+ * Refused while the agent is mid-run: resetting memory underneath a running
+ * task would store lessons into a half-wiped database.
  */
 export async function DELETE() {
   try {
+    const { runnerStats } = await import('@/lib/agent/runner')
+    const { running, queued } = runnerStats()
+    if (running > 0 || queued > 0) {
+      return NextResponse.json(
+        { error: `Agent is busy (${running} running, ${queued} queued). Wait for tasks to finish before resetting memory.` },
+        { status: 409 },
+      )
+    }
     const deleted = await db.$transaction([
       db.experience.deleteMany({}),
       db.lesson.deleteMany({}),

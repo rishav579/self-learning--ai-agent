@@ -22,6 +22,7 @@ import { createPlan } from './planner'
 import { executeTask } from './executor'
 import { evaluateTask, persistEvaluation } from './evaluator'
 import { reflectOnRun } from './reflector'
+import { CheckSpecSchema } from './schemas'
 
 export interface RunTaskOptions {
   mode?: AgentMode
@@ -65,11 +66,6 @@ export async function runAgentTask(taskId: string, options: RunTaskOptions = {})
   }
   // wrap llm to count calls
   const countedLlm: LlmClient = {
-    chat: async (m, o) => {
-      const r = await llm.chat(m, o)
-      await bumpLlm()
-      return r
-    },
     chatJson: async <T,>(o: Parameters<LlmClient['chatJson']>[0]) => {
       const r = await llm.chatJson<T>(o)
       await bumpLlm()
@@ -96,7 +92,12 @@ export async function runAgentTask(taskId: string, options: RunTaskOptions = {})
     let memory: RetrievedMemory | null = null
     if (caps.retrieveExperiences || caps.retrieveLessons) {
       await setStatus(taskId, 'retrieving')
-      memory = await retrieveRelevantMemory(task.input, understanding.category)
+      // query enrichment: the understanding module's goal + keywords describe
+      // the task in more general vocabulary than the raw input, which makes
+      // cross-task lesson retrieval substantially more reliable (a lesson
+      // about "arithmetic answer format" should surface for any arithmetic task)
+      const retrievalQuery = `${task.input}\n${understanding.goal}\n${understanding.keywords.join(' ')}`
+      memory = await retrieveRelevantMemory(retrievalQuery, understanding.category)
       if (!caps.retrieveLessons) memory = { lessons: [], experiences: memory.experiences, lessonIds: [] }
       if (!caps.retrieveExperiences) memory = { lessons: memory.lessons, experiences: [], lessonIds: memory.lessonIds }
       await db.task.update({ where: { id: taskId }, data: { retrievedMemory: JSON.stringify(memory) } })
@@ -263,7 +264,11 @@ export async function runAgentTask(taskId: string, options: RunTaskOptions = {})
     logger.error('task:failed', { taskId, error: message })
     await db.task
       .update({ where: { id: taskId }, data: { status: 'failed', error: truncate(message, 1000), completedAt: new Date() } })
-      .catch(() => {})
+      .catch((dbErr: Error) => {
+        // surface why the task row could not be marked failed (restart
+        // recovery will reconcile it on next boot)
+        logger.error('task:failed-status-update-failed', { taskId, error: dbErr.message })
+      })
     await logEvent(taskId, 'task_failed', { error: truncate(message, 500) })
   }
 }
@@ -272,7 +277,13 @@ function safeParseChecks(raw: string): CheckSpec[] {
   try {
     const v = JSON.parse(raw)
     if (!Array.isArray(v)) return []
-    return v as CheckSpec[]
+    // validate every entry against the API schema: corrupted/unknown entries
+    // are DROPPED (a corrupt check must not silently fail the task; dropping
+    // degrades to the internal+subjective evaluation path instead)
+    return v.flatMap((c) => {
+      const parsed = CheckSpecSchema.safeParse(c)
+      return parsed.success ? [parsed.data] : []
+    })
   } catch {
     return []
   }

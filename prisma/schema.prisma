@@ -89,12 +89,16 @@ model Lesson {
   helpfulCount   Int      @default(0)
   notHelpfulCount Int     @default(0)
   refinements    Int      @default(0)
+  // poisoning safeguard: auto-set when a lesson is repeatedly unhelpful;
+  // retired lessons are excluded from retrieval (see store.recordLessonUsage)
+  retired        Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   experiences    Experience[]
 
   @@index([category])
+  @@index([retired])
 }
 
 model Strategy {

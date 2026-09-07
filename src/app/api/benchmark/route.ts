@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { RunBenchmarkSchema } from '@/lib/agent/schemas'
 import { launchBenchmark } from '@/lib/agent/benchmark'
+import { safeJson } from '@/lib/api-helpers'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -45,14 +46,5 @@ export async function POST(request: Request) {
     }
     logger.error('api:benchmark-launch-failed', { error: message })
     return NextResponse.json({ error: 'Failed to launch benchmark' }, { status: 500 })
-  }
-}
-
-function safeJson(s: string | null | undefined): unknown {
-  if (!s) return null
-  try {
-    return JSON.parse(s)
-  } catch {
-    return null
   }
 }

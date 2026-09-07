@@ -209,6 +209,9 @@ export interface BenchmarkModeResult {
   meanScore: number
   successRate: number
   totalToolCalls: number
+  totalLlmCalls: number
+  meanIterations: number
+  meanDurationMs: number
   totalDurationMs: number
 }
 

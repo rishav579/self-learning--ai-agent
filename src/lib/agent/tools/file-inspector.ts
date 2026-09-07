@@ -16,7 +16,11 @@ const MAX_RETURN_CHARS = 20_000
 const IGNORED = new Set(['node_modules', '.git', '__pycache__'])
 
 function sandboxRoot(): string {
-  // Works both under `next dev` (cwd = project root) and `bun test` (cwd = project root)
+  // AGENT_SANDBOX_DIR lets the operator pin the sandbox (e.g. the production
+  // standalone server runs from .next/standalone/, which would otherwise
+  // bootstrap a DIFFERENT sandbox than dev). Default: <cwd>/sandbox.
+  const configured = process.env.AGENT_SANDBOX_DIR
+  if (configured && configured.trim()) return path.resolve(configured.trim())
   return path.resolve(process.cwd(), 'sandbox')
 }
 

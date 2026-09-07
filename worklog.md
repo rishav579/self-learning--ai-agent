@@ -64,3 +64,50 @@ Stage Summary:
 - System complete and verified end-to-end with real LLM runs
 - All 9 final-verification categories green
 - Honest findings documented: ceiling effect on benchmark task set; API rate limiting is the dominant environmental constraint; lessons inherit quality of evaluation signal
+
+---
+Task ID: 3
+Agent: main (Super Z)
+Task: FINAL HARDENING AND ADVERSARIAL AUDIT (break the system, fix, verify)
+
+Work Log:
+- Full re-inspection of all agent/API/UI/DB/config files; baseline 78/78 tests, tsc clean, lint clean
+- SECURITY (critical): found and FIXED two real node:vm sandbox escapes (arbitrary host code execution):
+  1. code_executor injected host-realm builtins (Math/Object/Array/...) → `this.constructor.constructor("return process")()` compiles in the HOST realm, bypassing codeGeneration:false — verified live ("ESCAPED") before fixing
+  2. evaluator js_expression passed a host `numbers` array → `numbers.constructor.constructor(...)` — same class, verified live
+  Fix (both): null-prototype sandbox, ZERO host objects injected (fresh context intrinsics), console built in-context from a null-prototype callback, globalThis prototype severed, codeGeneration disabled, fail-closed hardening step. 12+ escape vectors regression-tested; prototype pollution of host builtins now impossible (own realm)
+- llm.ts refactored with injectable transport + backoff → 21 resilience tests (429 storms, timeouts, malformed/prose/fenced JSON, schema-invalid retry+feedback, dead-LLM degradation of understand/plan/reflect/evaluate)
+- isTransientError extended (econn/socket/fetch failed)
+- Runner fixes: queued/running double-count bug (stats inflated), queue-full check now queued+running, restart recovery via src/instrumentation.ts (in-flight→failed "interrupted by restart", pending→re-enqueued, verified E2E on production), state moved to globalThis (survives dev hot-reload; found busy-guard silently broken by module reload — verified fixed)
+- Memory anti-poisoning: Lesson.retired column + auto-retirement (>=3 uses, helpfulRate<0.35), retrieval excludes retired + trust-weighting (confidence ±10%, helpful-rate penalty), near-duplicate EXPERIENCE dedup-merge (similarity>=0.9) — repeated identical tasks leave 1 row (E2E tested)
+- Retrieval query enrichment (input + understanding.goal + keywords) for reliable cross-task lesson transfer
+- safeParseChecks now validates entries via CheckSpecSchema (corrupted checks dropped, not phantom-failed)
+- http_get SSRF verified against hex/decimal/octal IPv4, IPv6 mapped/ULA/link-local, credentials, non-http protocols, internal names, TEST-NET black hole (timeout abort path)
+- Benchmark redesigned: hard v1 (bare-number trap) ran for real → mode A scored 100% (ceiling CONFIRMED, reported honestly); v2 = ANSWER:-convention trap (checkers demand ^ANSWER: [0-9]+$, unguessable, learnable only via stored+retrieved failure lesson) + memory reset per mode (controlled A/B/C/D) + efficiency metrics (llmCalls/iterations/duration)
+- v1 benchmark completed: A=1.00/100%, B=0.667, C=0.667 (B/C degraded by 429-killed tasks), D=0.00 (all six 429-killed — hourly API quota exhausted; environmental, honestly reported)
+- Production hardening: build now type-checks (removed scaffold's ignoreBuildErrors), start script exports DATABASE_URL (standalone server does not load .env!) + pins AGENT_SANDBOX_DIR (standalone cwd differs from dev)
+- Production build succeeded; standalone server started; health/API/frontend OK; restart-recovery E2E verified on production (orphan→failed, pending→re-enqueued)
+- Memory-route reset now 409s while agent busy; safeJson deduplicated into src/lib/api-helpers.ts
+- UI verified on production: 6 tabs, mobile viewport 390x844, failed-task error alert ("interrupted by a server restart..."), live polling, benchmark running state, no page errors
+- Perf measured (14 real completed benchmark tasks): mean 5 LLM calls/task (bounded), 3 iterations, ~28s/task dominated by API pacing; tools 0-2ms
+- Tests: 172/172 pass (87 new adversarial/resilience/recovery), tsc clean, eslint clean
+
+Bugs found & fixed this session:
+1. RCE via vm sandbox host-builtin injection (code_executor + evaluator) — fixed + regression-tested
+2. Runner double-counting inflight tasks in stats (queued never decremented at start)
+3. In-memory queue lost ALL tasks on restart with no reconciliation — recovery implemented + verified
+4. Busy-guard/queue state silently reset by dev hot-reload module re-instantiation — globalThis state
+5. Misleading comment: retrieval claimed confidence-biased ranking but never used confidence — now actually weighted
+6. Corrupted checks JSON phantom-failed tasks — now validated+dropped
+7. Production standalone would not find .env DATABASE_URL — exported in start script
+8. Standalone server cwd would bootstrap a different sandbox — AGENT_SANDBOX_DIR pinned
+9. ECONNREFUSED-class errors not retried as transient
+10. Evaluator js_expression host-array RCE — fixed same as (1)
+11. safeJson duplicated in 3 routes — consolidated
+12. LLM interface dead `chat` method — removed
+
+Stage Summary:
+- Security posture materially improved (2 verified RCEs closed); adversarial suite of 87 tests guards regressions
+- System survives: empty/long/malformed inputs, unknown tools, invalid args, timeouts, 429 storms, DB corruption, restarts mid-task, concurrent bursts (load shedding verified: 8 accepted / 4 rejected 429)
+- Hard v1 benchmark honestly showed the ceiling; v2 (convention trap) designed to make memory matter — pending API quota recovery to run
+- Remaining: v2 benchmark run + failure-learning demo (blocked on LLM quota window), final README numbers, final production rebuild with latest code

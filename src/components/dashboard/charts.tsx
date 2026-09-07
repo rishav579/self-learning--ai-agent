@@ -192,7 +192,7 @@ export function BenchmarkPanel({
   busy,
 }: {
   run: BenchmarkRun | null
-  onLaunch: (taskSet: 'default' | 'quick') => void
+  onLaunch: (taskSet: 'default' | 'quick' | 'hard') => void
   busy: boolean
 }) {
   const modes = ['no_memory', 'memory_only', 'memory_reflection', 'full'] as const
@@ -215,18 +215,25 @@ export function BenchmarkPanel({
             <span className="mx-1 font-medium">B memory</span>·
             <span className="mx-1 font-medium">C + reflection</span>·
             <span className="mx-1 font-medium">D + strategy</span>.
-            Measures whether the learning loop actually improves performance. Results below are real measurements —
-            reset memory first for a clean comparison.
+            Measures whether the learning loop actually improves performance. Results below are real measurements — no fabrication.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
           <button
             type="button"
-            onClick={() => onLaunch('quick')}
+            onClick={() => onLaunch('hard')}
             disabled={busy || run?.status === 'running'}
             className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900"
           >
-            {busy || run?.status === 'running' ? 'Running… (several minutes)' : 'Run quick benchmark (4 tasks × 4 modes)'}
+            {busy || run?.status === 'running' ? 'Running… (several minutes)' : 'Run hard benchmark (6 tasks × 4 modes, memory reset per mode)'}
+          </button>
+          <button
+            type="button"
+            onClick={() => onLaunch('quick')}
+            disabled={busy || run?.status === 'running'}
+            className="rounded-lg border px-4 py-2 text-sm font-medium transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Run quick benchmark (4 tasks × 4 modes)
           </button>
           <button
             type="button"
@@ -286,7 +293,7 @@ export function BenchmarkPanel({
                           </span>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          success rate {(r.successRate * 100).toFixed(0)}% · {r.perTask.filter((t) => t.success).length}/{r.perTask.length} passed · {r.totalToolCalls} tool calls
+                          success rate {(r.successRate * 100).toFixed(0)}% · {r.perTask.filter((t) => t.success).length}/{r.perTask.length} passed · {r.totalToolCalls} tool calls · {r.totalLlmCalls} LLM calls · mean {r.meanIterations} iterations
                         </div>
                         <div className="mt-2 space-y-1">
                           {r.perTask.map((t) => (

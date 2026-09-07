@@ -3,7 +3,8 @@
  *  - cached ZAI singleton (real backend, server-side only)
  *  - structured JSON output validated against zod schemas
  *  - retries with error feedback, per-call timeout, hard failure errors
- *  - an injectable interface so tests can mock the LLM entirely
+ *  - an injectable transport so tests can simulate 429s / timeouts /
+ *    malformed output deterministically (no network)
  */
 import type { z } from 'zod'
 import { logger } from '@/lib/logger'
@@ -33,8 +34,13 @@ export interface ChatJsonOptions {
   label: string // for logging / error messages
 }
 
+/**
+ * The raw transport performs ONE LLM request. Injectable for tests.
+ * Returns the assistant message content or throws.
+ */
+export type LlmTransport = (messages: ChatMsg[], label: string) => Promise<string>
+
 export interface LlmClient {
-  chat(messages: ChatMsg[], opts?: { timeoutMs?: number; label?: string }): Promise<string>
   chatJson<T>(opts: ChatJsonOptions): Promise<T>
 }
 
@@ -86,7 +92,7 @@ export function extractJson(text: string): unknown {
 }
 
 // ---------------------------------------------------------------------------
-// Real implementation (z-ai-web-dev-sdk, server only)
+// Real transport (z-ai-web-dev-sdk, server only)
 // ---------------------------------------------------------------------------
 
 async function loadSdk() {
@@ -99,8 +105,8 @@ function delay(ms: number): Promise<void> {
 }
 
 /** Detect rate-limit / transient server errors that are worth backing off for. */
-function isTransientError(message: string): boolean {
-  return /429|too many requests|rate ?limit|overloaded|503|502|timeout|timed out|network/i.test(message)
+export function isTransientError(message: string): boolean {
+  return /429|too many requests|rate ?limit|overloaded|503|502|timeout|timed out|network|econn|socket|fetch failed/i.test(message)
 }
 
 /**
@@ -108,7 +114,7 @@ function isTransientError(message: string): boolean {
  * The upstream API throttles long-running workloads hard; short backoffs
  * just burn retries inside the same throttle window.
  */
-function backoffMs(attempt: number, transient: boolean): number {
+export function backoffMs(attempt: number, transient: boolean): number {
   const base = transient ? 10_000 : 500
   return Math.min(base * Math.pow(2, attempt - 1), 60_000)
 }
@@ -168,41 +174,40 @@ export function truncate(s: string, max: number): string {
   return s.length <= max ? s : s.slice(0, max) + `…[truncated ${s.length - max} chars]`
 }
 
-export function createLlmClient(): LlmClient {
-  return {
-    async chat(messages: ChatMsg[], opts?: { timeoutMs?: number; label?: string }): Promise<string> {
-      const timeoutMs = opts?.timeoutMs ?? 90_000
-      const label = opts?.label ?? 'chat'
-      const t0 = Date.now()
-      try {
-        const zai = await getZai()
-        const completion = await withTimeout(
-          paced(() =>
-            zai.chat.completions.create({
-              messages,
-              thinking: { type: 'disabled' },
-            }),
-          ),
-          timeoutMs,
-          label,
-        )
-        const content: string | undefined = completion?.choices?.[0]?.message?.content
-        if (typeof content !== 'string') {
-          throw new LlmError(`LLM "${label}" returned no content`)
-        }
-        logger.debug(`llm:${label}`, { ms: Date.now() - t0, chars: content.length })
-        return content
-      } catch (e) {
-        logger.warn(`llm:${label}:failed`, { ms: Date.now() - t0, error: (e as Error).message })
-        throw e instanceof LlmError ? e : new LlmError(`LLM "${label}" failed: ${(e as Error).message}`)
-      }
-    },
+/** Options for createLlmClient — used by tests to inject a fake transport. */
+export interface CreateLlmClientOptions {
+  transport?: LlmTransport
+  /** override retry backoff delays (ms) — tests use tiny values */
+  backoffFor?: (attempt: number, transient: boolean) => number
+  /** disable the global rate limiter pacing (tests) */
+  unpaced?: boolean
+}
 
-    async chatJson<T>(opts: ChatJsonOptions): Promise<T> {
-      const attempts = opts.attempts ?? 4
-      const timeoutMs = opts.timeoutMs ?? 120_000
-      const schema = opts.schema
-      const system = `${opts.system}\n\nCRITICAL OUTPUT RULES:\n- Respond with a SINGLE valid JSON object and NOTHING else.\n- No prose, no markdown, no code fences.\n- Your entire response must be parseable by JSON.parse.`
+export function createLlmClient(opts: CreateLlmClientOptions = {}): LlmClient {
+  const transport: LlmTransport =
+    opts.transport ??
+    (async (messages, label) => {
+      const zai = await getZai()
+      const completion = await zai.chat.completions.create({
+        messages,
+        thinking: { type: 'disabled' },
+      })
+      const content: string | undefined = completion?.choices?.[0]?.message?.content
+      if (typeof content !== 'string') {
+        throw new LlmError(`LLM "${label}" returned no content`)
+      }
+      return content
+    })
+  const backoffFor = opts.backoffFor ?? backoffMs
+  const run = <T>(fn: () => Promise<T>, label: string, timeoutMs: number): Promise<T> =>
+    opts.unpaced ? withTimeout(fn(), timeoutMs, label) : withTimeout(paced(fn), timeoutMs, label)
+
+  return {
+    async chatJson<T>(optsIn: ChatJsonOptions): Promise<T> {
+      const attempts = optsIn.attempts ?? 4
+      const timeoutMs = optsIn.timeoutMs ?? 120_000
+      const schema = optsIn.schema
+      const system = `${optsIn.system}\n\nCRITICAL OUTPUT RULES:\n- Respond with a SINGLE valid JSON object and NOTHING else.\n- No prose, no markdown, no code fences.\n- Your entire response must be parseable by JSON.parse.`
       let lastError = ''
       let lastRaw = ''
       for (let attempt = 1; attempt <= attempts; attempt++) {
@@ -210,26 +215,16 @@ export function createLlmClient(): LlmClient {
           attempt > 1 && lastError
             ? `\n\nYour previous response was INVALID.\nPrevious response (truncated): ${truncate(lastRaw, 800)}\nValidation error: ${lastError}\nFix it and respond with a single valid JSON object only.`
             : ''
-        const prompt = `${opts.prompt}\n\nThe JSON object must have this shape:\n${opts.shapeHint}${feedback}`
+        const prompt = `${optsIn.prompt}\n\nThe JSON object must have this shape:\n${optsIn.shapeHint}${feedback}`
         const t0 = Date.now()
         try {
-          const zai = await getZai()
-          const completion = await withTimeout(
-            paced(() =>
-              zai.chat.completions.create({
-                messages: [
-                  { role: 'system', content: system },
-                  { role: 'user', content: prompt },
-                ],
-                thinking: { type: 'disabled' },
-              }),
-            ),
+          const content = await run(
+            () => transport([{ role: 'system', content: system }, { role: 'user', content: prompt }], optsIn.label),
+            optsIn.label,
             timeoutMs,
-            opts.label,
           )
-          const content: string | undefined = completion?.choices?.[0]?.message?.content
           if (typeof content !== 'string' || !content.trim()) {
-            throw new LlmError(`LLM "${opts.label}" returned no content`)
+            throw new LlmError(`LLM "${optsIn.label}" returned no content`)
           }
           lastRaw = content
           const parsed = extractJson(content)
@@ -239,24 +234,24 @@ export function createLlmClient(): LlmClient {
               .slice(0, 5)
               .map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`)
               .join('; ')
-            logger.warn(`llm:${opts.label}:schema-invalid`, { attempt, issues: lastError })
-            if (attempt < attempts) await delay(backoffMs(attempt, false))
+            logger.warn(`llm:${optsIn.label}:schema-invalid`, { attempt, issues: lastError })
+            if (attempt < attempts) await delay(backoffFor(attempt, false))
             continue
           }
-          logger.debug(`llm:${opts.label}:ok`, { ms: Date.now() - t0, attempt })
+          logger.debug(`llm:${optsIn.label}:ok`, { ms: Date.now() - t0, attempt })
           return validated.data as T
         } catch (e) {
           lastError = (e as Error).message
           const transient = isTransientError(lastError)
-          logger.warn(`llm:${opts.label}:attempt-failed`, { attempt, transient, error: truncate(lastError, 200) })
+          logger.warn(`llm:${optsIn.label}:attempt-failed`, { attempt, transient, error: truncate(lastError, 200) })
           // If this was the last attempt, rethrow
           if (attempt === attempts) throw e
           // Back off before the next attempt — critical for 429 rate limits
-          await delay(backoffMs(attempt, transient))
+          await delay(backoffFor(attempt, transient))
         }
       }
       throw new LlmError(
-        `LLM "${opts.label}" failed after ${attempts} attempts (last error: ${lastError}; last raw: ${truncate(lastRaw, 300)})`,
+        `LLM "${optsIn.label}" failed after ${attempts} attempts (last error: ${lastError}; last raw: ${truncate(lastRaw, 300)})`,
       )
     },
   }

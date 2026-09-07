@@ -185,7 +185,7 @@ export default function Home() {
   }, [loadLists])
 
   const launchBenchmark = useCallback(
-    async (taskSet: 'default' | 'quick') => {
+    async (taskSet: 'default' | 'quick' | 'hard') => {
       setBenchmarkBusy(true)
       try {
         const res = await fetch('/api/benchmark', {

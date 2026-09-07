@@ -120,7 +120,8 @@ export async function retrieveRelevantMemory(
   }
 
   const [lessons, experiences] = await Promise.all([
-    db.lesson.findMany({ take: scanLimit, orderBy: { updatedAt: 'desc' } }),
+    // retired lessons (repeatedly unhelpful) are excluded from retrieval
+    db.lesson.findMany({ where: { retired: false }, take: scanLimit, orderBy: { updatedAt: 'desc' } }),
     db.experience.findMany({ take: scanLimit, orderBy: { createdAt: 'desc' } }),
   ])
 
@@ -129,13 +130,20 @@ export async function retrieveRelevantMemory(
       const docTokens = [...tokenize(l.content), ...parseJsonArray(l.keywords)]
       let score = cosineSimilarity(queryTokens, docTokens)
       if (category && l.category === category && score > 0) score += 0.1
-      // confidence slightly biases ranking, never outweighs similarity
+      // trust multiplier: confidence ±10%, plus a real penalty for lessons
+      // that were applied before and did not help (usage evidence beats
+      // self-reported confidence). Unproven lessons keep full weight.
+      const uses = l.helpfulCount + l.notHelpfulCount
+      const helpfulRate = uses > 0 ? l.helpfulCount / uses : null
+      let trust = 0.9 + 0.1 * l.confidence
+      if (helpfulRate !== null && uses >= 2) trust *= 0.55 + 0.45 * helpfulRate
+      score = score * trust
       return {
         id: l.id,
         content: l.content,
         type: l.type,
         confidence: l.confidence,
-        similarity: Math.round(Math.min(score, 1) * 1000) / 1000,
+        similarity: Math.round(Math.min(Math.max(score, 0), 1) * 1000) / 1000,
         source: 'lesson' as const,
         _raw: l,
       }
