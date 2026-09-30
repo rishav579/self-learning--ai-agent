@@ -1,7 +1,9 @@
 // Release audit: verify README's claimed real-LLM learning-loop evidence in AgentEvent timeline
 import { PrismaClient } from "@prisma/client";
 
-const db = new PrismaClient({ datasources: { db: { url: "file:/home/z/my-project/db/custom.db" } } });
+import path from 'node:path';
+const dbPath = path.resolve(process.cwd(), 'db/custom.db');
+const db = new PrismaClient({ datasources: { db: { url: `file:${dbPath}` } } });
 
 // 1. any lesson_stored / experience_stored / strategy_updated events at all?
 const eventTypes = await db.agentEvent.groupBy({ by: ["type"], _count: { _all: true } });

@@ -48,7 +48,9 @@ export default function Home() {
   const [benchmarkBusy, setBenchmarkBusy] = useState(false)
   const taskRef = useRef<TaskDetailType | null>(null)
 
-  taskRef.current = task
+  useEffect(() => {
+    taskRef.current = task
+  }, [task])
 
   // ---------- data loading ----------
   const loadLists = useCallback(async () => {
@@ -104,18 +106,29 @@ export default function Home() {
 
   // open latest task on first mount so the dashboard is never empty
   useEffect(() => {
-    void loadLists()
-    void loadBenchmark()
-    void (async () => {
-      const res = await fetch('/api/tasks?limit=1')
-      if (res.ok) {
-        const body = (await res.json()) as TasksResponse
-        if (body.tasks.length > 0) {
-          setActiveTaskId(body.tasks[0].id)
-          await loadTask(body.tasks[0].id)
+    let isMounted = true
+    const init = async () => {
+      await loadLists()
+      if (!isMounted) return
+      await loadBenchmark()
+      if (!isMounted) return
+      try {
+        const res = await fetch('/api/tasks?limit=1')
+        if (res.ok) {
+          const body = (await res.json()) as TasksResponse
+          if (body.tasks.length > 0 && isMounted) {
+            setActiveTaskId(body.tasks[0].id)
+            await loadTask(body.tasks[0].id)
+          }
         }
+      } catch {
+        /* ignore */
       }
-    })()
+    }
+    void init()
+    return () => {
+      isMounted = false
+    }
   }, [loadLists, loadBenchmark, loadTask])
 
   // ---------- live polling ----------

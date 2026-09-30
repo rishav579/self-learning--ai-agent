@@ -129,7 +129,14 @@ the database are validated and dropped (never silently fail tasks).
 bun install        # or npm install
 
 # 2. create .env with the database URL
-echo 'DATABASE_URL=file:/home/z/my-project/db/custom.db' > .env
+# Linux / macOS:
+echo "DATABASE_URL=file:./db/custom.db" > .env
+
+# Windows PowerShell:
+"DATABASE_URL=file:./db/custom.db" | Out-File -Encoding utf8 .env
+
+# Windows CMD:
+echo DATABASE_URL=file:./db/custom.db> .env
 
 # 3. push the schema + generate the client
 bun run db:push

@@ -27,7 +27,7 @@ describe('file_inspector sandbox', () => {
 
   test('BLOCKS absolute path escape', async () => {
     await expect(readSandboxFile('/etc/passwd')).rejects.toThrow()
-    await expect(readSandboxFile('/home/z/my-project/.env')).rejects.toThrow()
+    await expect(readSandboxFile('/etc/shadow')).rejects.toThrow()
   })
 
   test('missing file is a clean error', async () => {

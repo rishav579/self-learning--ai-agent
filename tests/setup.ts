@@ -3,4 +3,7 @@
  * Points Prisma at an isolated test database.
  * Schema is created by: bun run db:push:test  (see package.json)
  */
-process.env.DATABASE_URL = 'file:/home/z/my-project/db/test.db'
+import path from 'node:path'
+
+const testDbPath = path.resolve(process.cwd(), 'db/test.db')
+process.env.DATABASE_URL = process.env.DATABASE_URL || `file:${testDbPath}`
