@@ -1,26 +1,25 @@
 # GitHub Repository Audit — rishav579
 
 ## Audit Scope & Method
-This document presents an exhaustive, evidence-based source-code and technical audit of all 15 public repositories owned by GitHub user **rishav579**.
+This document presents an evidence-based, factual technical audit of all 15 public repositories owned by GitHub user **rishav579**.
 
 ### Audit Methodology & Verification Process
-1. **Metadata & Repository Traversal**: Executed deep API queries to retrieve repository metadata, commit logs, branch structures, file size metrics, and full recursive directory trees for all 15 public repositories.
-2. **Read-Only Source-Code Inspection**: Examined key implementation source files across both frontend and backend layers (including entry points, routing logic, ORM models, API controllers, worker threads, prompt templates, evaluation scripts, and test suites).
-3. **Dependency & Manifest Analysis**: Analyzed dependency manifests (`package.json`, `requirements.txt`, `pyproject.toml`, `Dockerfile`, `docker-compose.yml`, `bun.lock`, etc.) to distinguish between real functional dependencies, unused/dead dependencies, and scaffold residue.
-4. **Residue & Artifact Scanning**: Ran automated pattern scans across all repositories for scaffold markers (`z-ai-web-dev-sdk`, `Z.ai`, `GLM`, `ChatGLM`, `z-cdn`, machine-specific absolute paths like `/home/z/my-project`, and boilerplate residue).
+1. **Metadata & Repository Traversal**: Executed API queries to retrieve repository metadata, commit logs, branch structures, file size metrics, and recursive directory trees for all 15 public repositories.
+2. **Source-Code Inspection**: Examined key implementation source files across frontend and backend layers (including entry points, routing logic, ORM models, API controllers, worker threads, prompt templates, evaluation scripts, and test suites).
+3. **Dependency & Manifest Analysis**: Analyzed dependency manifests (`package.json`, `requirements.txt`, `pyproject.toml`, `Dockerfile`, `docker-compose.yml`, `bun.lock`) to distinguish between real functional dependencies, unused dependencies, and scaffold residue.
+4. **Residue & Artifact Scanning**: Ran pattern scans across all repositories for scaffold markers (`z-ai-web-dev-sdk`, `Z.ai`, `GLM`, `ChatGLM`, `z-cdn`, machine-specific absolute paths like `/home/z/my-project`, and boilerplate residue).
 5. **Security & Configuration Hygiene**: Verified environment variable handling, secret exposure risk, authorization boundaries, tenant isolation mechanisms, and code execution parameters.
-6. **Execution & Build Verification**: Verified local test runs, linting, typechecking, and build capabilities where local runtime environments permitted (e.g., in `self-learning--ai-agent`).
+6. **Execution & Build Verification**: Verified local test runs, linting, typechecking, and build capabilities where local runtime environments permitted (specifically in `self-learning--ai-agent`).
 
 ## Important Limitations
-- **External Live Deployment Verification**: Live deployment claims (e.g. Vercel URLs, AWS EKS clusters, Railway deployments) were evaluated based on repository-visible configuration files, CI scripts, and build artifacts. Active production runtime status on external hosts could not be independently verified via live network probes due to sandbox isolation boundaries.
+- **External Live Deployment Verification**: Live deployment claims (e.g., Vercel URLs, AWS EKS clusters, Railway deployments) were evaluated based on repository-visible configuration files, CI scripts, and build artifacts. Active production runtime status on external hosts was not independently verified via live network probes due to sandbox isolation boundaries.
 - **Third-Party API & Cloud Services**: Cloud-dependent features (such as OpenAI API keys, Google Gemini API endpoints, Stripe Connect webhooks, Redis servers, Bhashini ASR endpoints, and AWS S3/EKS clusters) were evaluated by static inspection of integration code and mock fallback handlers.
 
 ## Portfolio-Level Findings
-1. **Strong Domain Specialization in Applied AI & Agentic Systems**: The portfolio demonstrates a coherent focus on applied AI engineering—specifically agentic workflows with memory/planning (`self-learning--ai-agent`, `OWNARA-AI`), security-first enterprise RAG (`secure-enterprise-rag`), developer tools (`repo-pilot`, `AGENT-LENS-`), and specialized NLP/multilingual pipelines (`bhashini-voice-gateway`, `sahayak`).
-2. **Modern Backend Architecture & Type Safety**: Python projects consistently employ FastAPI with Pydantic schemas, SQLAlchemy/Alembic or Motor, and structured error handling. TypeScript projects utilize modern Next.js App Router, Prisma ORM, and Zod schema validation.
-3. **Scaffold & Provider Residue**: Several Next.js/TypeScript projects derived from a Next.js/Tailwind scaffold contain `z-ai-web-dev-sdk` as a dependency and `z-cdn` script tags in `layout.tsx`. These represent scaffold residue that can be safely pruned to improve repository hygiene.
-4. **Environment Path Hardcoding**: Specific script files in `self-learning--ai-agent` contain hardcoded sandbox path references (`/home/z/my-project/db/custom.db`), which should be replaced with environment-variable defaults for portability across different environments.
-5. **High Overall Defensibility**: Codebases feature genuine logic, well-structured domain abstractions, explicit failure handling, and objective evaluation loops rather than simple API wrapping.
+1. **Domain Focus in Applied AI & Backend Systems**: The portfolio demonstrates a focus on applied AI engineering—specifically agentic workflows with memory/planning (`self-learning--ai-agent`, `OWNARA-AI`), security-oriented enterprise RAG (`secure-enterprise-rag`), developer tools (`repo-pilot`, `AGENT-LENS-`), and specialized NLP pipelines (`bhashini-voice-gateway`, `sahayak`).
+2. **Backend Architecture & Type Safety**: Python projects consistently employ FastAPI with Pydantic schemas, SQLAlchemy/Alembic or Motor, and structured error handling. TypeScript projects utilize Next.js App Router, Prisma ORM, and Zod schema validation.
+3. **Scaffold & Provider Residue**: Several Next.js/TypeScript projects derived from a Next.js/Tailwind scaffold contain `z-ai-web-dev-sdk` as a dependency and `z-cdn` script tags in `layout.tsx`. These represent scaffold residue in `meridian-market` and `rishav-portfolio-starter`, while `z-ai-web-dev-sdk` is actively consumed as the functional LLM provider interface in `self-learning--ai-agent`.
+4. **Environment Path Hardcoding**: Specific script files in `self-learning--ai-agent` contain hardcoded sandbox path references (`/home/z/my-project/db/custom.db`), which should be replaced with environment-variable defaults for portability.
 
 ---
 
@@ -31,79 +30,70 @@ This document presents an exhaustive, evidence-based source-code and technical a
 ### Identity & Purpose
 - **Description**: Observability platform for LLM agents — traces reasoning steps and tool calls, auto-detects loops/hallucinations/cost anomalies, and provides a replay dashboard for debugging agent failures.
 - **Repository Metadata**: Public, 1 star, Primary Language: Python, Default Branch: `main`, Size: ~120 KB.
-- **Claimed Purpose**: Real-time agent execution tracing, automated detector heuristics for execution loops, hallucination detection via embedding/semantic similarity, and evaluation harnesses.
 
 ### Actual Architecture
 - **Application Entry Points**:
   - Backend REST API: `backend_main.py` (FastAPI app).
-  - Detector Modules: `backend_detectors.py` (loop detector, step counter, cost tracker), `backend_hallucination.py` (NLI / semantic entailment checking).
-  - Evaluation Harness: `backend_eval_harness.py`.
+  - Detector Modules: `backend_detectors.py` (loop detector, step counter, cost tracker), `backend_hallucination.py` (semantic entailment checking).
   - Database Layer: `backend_database.py`, `backend_models.py` (SQLAlchemy models for Agent, Run, TraceStep, AnomalyAlert).
   - Schema / Validation: `backend_schemas.py` (Pydantic models).
-  - Demo Agent: `backend_demo_agent.py` (Simulated multi-step agent generating sample traces).
-- **Execution & Data Flow**: Agent execution steps -> Ingested via `/api/runs/{run_id}/steps` -> Evaluated by `LoopDetector` (hash window) and `backend_hallucination.py` -> Persisted to SQLite -> Alerts emitted via `/api/alerts`.
+- **Execution Flow**: Trace ingestion via `/api/runs/{run_id}/steps` -> Evaluated by `LoopDetector` in `backend_detectors.py` and cosine similarity in `backend_hallucination.py` -> Saved to SQLite.
 
 ### Important Entry Points
-- `backend_main.py`: FastAPI app exposing routes `/api/runs`, `/api/runs/{run_id}/steps`, `/api/alerts`, `/api/demo/trigger`.
-- `backend_detectors.py`: Implements `LoopDetector` using MD5 hashing of action strings and state vectors to identify repetitive execution loops within a moving window.
-- `backend_hallucination.py`: Evaluates grounding by computing cosine similarity between retrieved context chunks and output claims.
+- `backend_main.py`: Exposes REST endpoints for trace ingestion and alerts.
+- `backend_detectors.py`: Implements hash-based sliding window loop detection.
+- `backend_hallucination.py`: Computes grounding scores using cosine similarity between context and output claims.
 
 ### Technology / Dependencies
-- **Core Stack**: Python 3.10+, FastAPI, SQLAlchemy, Pydantic v2, SQLite.
-- **Dependencies**: `fastapi`, `uvicorn`, `sqlalchemy`, `pydantic`, `numpy`, `scikit-learn` (for cosine similarity).
-- **Dependency Classification**:
-  - `fastapi`, `sqlalchemy`, `pydantic`, `numpy`, `scikit-learn`: REAL FUNCTIONAL DEPENDENCY.
-  - No dead or extraneous dependencies detected.
+- **Stack**: Python 3.10+, FastAPI, SQLAlchemy, Pydantic, NumPy, Scikit-learn.
+- **Classification**: REAL FUNCTIONAL DEPENDENCY for all listed packages.
 
 ### AI / Provider / Scaffold Findings
 - **Residue Search Results**: Zero occurrences of `z-ai-web-dev-sdk`, `Z.ai`, `GLM`, `ChatGLM`, or machine-specific paths found.
-- **Classification**: KEEP — Clean, custom Python codebase.
+- **Classification**: KEEP.
 
 ### Security Findings
-- **Secret Hygiene**: Clean. Uses `.env.example` with standard non-sensitive placeholder variables (`DATABASE_URL=sqlite:///./agent_lens.db`).
-- **Input Validation**: Pydantic models strictly validate all incoming trace payloads and anomaly alert configurations.
+- **Secret Hygiene**: Clean `.env.example` with non-sensitive placeholders.
+- **Input Validation**: Pydantic models validate incoming trace payloads.
 
 ### Testing / CI / Build
-- **Test Framework**: Pytest.
-- **Test Artifacts**: `test_detectors.py` verifies loop detection, cost anomaly thresholds, and step limit triggers.
-- **Build / Lint / Typecheck**: Clean standard Python syntax; runnable via `pytest`.
+- **Test Framework**: Pytest (`test_detectors.py`).
+- **Execution Evidence**: NOT VERIFIED (Test execution not run in this audit session). Code structure is valid.
 
 ### Deployment Findings
 - **Evidence**: `Dockerfile` and `.env.example` present.
-- **Classification**: DEPLOYMENT CONFIG PRESENT — Includes standard container configuration for FastAPI and SQLite.
+- **Classification**: DEPLOYMENT CONFIG PRESENT.
 
 ### README vs Implementation
-- **Claimed Features**: Real-time agent execution tracing, automated detector heuristics, hallucination detection.
-- **Code Reality**: Backend API (`backend_main.py`), detectors (`backend_detectors.py`), and hallucination engine (`backend_hallucination.py`) completely implement tracing and anomaly detection. Replay dashboard API exists for frontend consumption.
-
-### Repository Hygiene
-- **Artifacts**: Clean. No `.pyc`, `.db`, or temporary log files committed.
-- **Structure**: Clear separation of database models, schemas, REST routers, and detector services.
-
-### Interview / Recruiter Defensibility
-- **Demonstrates**: Clear understanding of LLM agent failure modes (stuck loops, drift, hallucination, cost spikes) and observability tooling.
-- **Defensibility**: Highly defensible. Owner can explain how hash-based windowing detects action repetition and how contextual similarity scoring detects ungrounded outputs.
-
-### Concrete Findings
-- **Strengths**: Lightweight, modular detector design with minimal external dependencies.
-- **Weaknesses**: Hallucination detector uses local lexical/cosine similarity rather than a full NLI cross-encoder model, which is a reasonable lightweight trade-off but worth noting.
-
-### Recommended Next Actions
-1. Add an explicit frontend component directory if a web UI was intended to accompany the backend API.
-2. Expand `test_detectors.py` to cover edge cases such as empty trace steps and high-concurrency trace ingestion.
-
-### README ↔ Code Consistency Table
 | Claim | Code Evidence | Status |
 |-------|---------------|--------|
-| Agent execution tracing | Implemented via SQLAlchemy `TraceStep` models & API endpoints | Verified |
-| Automated loop detection | Implemented in `backend_detectors.py` via state/action hashing | Verified |
-| Hallucination / grounding check | Implemented in `backend_hallucination.py` via embedding cosine similarity | Verified |
-| Replay dashboard | REST API endpoints structured for frontend UI consume | Partially Verified |
+| Agent execution tracing | Implemented via SQLAlchemy `TraceStep` models & API endpoints | VERIFIED |
+| Automated loop detection | Implemented in `backend_detectors.py` via state/action hashing | VERIFIED |
+| Hallucination / grounding check | Implemented in `backend_hallucination.py` via embedding cosine similarity | VERIFIED |
+| Replay dashboard UI | REST API endpoints present; frontend UI asset not present in repo | PARTIALLY VERIFIED |
 
-### Important File Evidence
-- `backend_detectors.py`: Core heuristic engine for detecting infinite agent loops and cost spikes.
-- `backend_hallucination.py`: Grounding verification logic using cosine similarity.
-- `backend_main.py`: FastAPI REST server orchestrating trace ingestion.
+### Repository Hygiene
+- No build artifacts or temporary database files committed.
+
+### Interview / Recruiter Defensibility
+- **What is demonstrable**: Knowledge of agent observability, hash-based sliding window loop detection, and vector similarity grounding checks.
+- **What needs explanation**: Difference between lightweight cosine similarity grounding vs cross-encoder NLI models.
+
+### What is genuinely supported
+- Functional FastAPI endpoints for trace logging and anomaly evaluation.
+- Hash-based sliding window algorithm for detecting repetitive action loops.
+
+### Weak / incomplete areas
+- Frontend replay UI dashboard components are not included in the repository.
+
+### What is unverifiable
+- Real-time performance under high-throughput production trace streams.
+
+### What should NOT be changed
+- Core sliding-window loop detection algorithm in `backend_detectors.py`.
+
+### First corrective action
+- Add a basic web UI component or OpenAPI specification documentation for trace visualization.
 
 ---
 
@@ -112,74 +102,67 @@ This document presents an exhaustive, evidence-based source-code and technical a
 ### Identity & Purpose
 - **Description**: Production-oriented multilingual voice-to-action gateway for Indian users, combining Bhashini ASR, LangGraph intent routing, human-in-the-loop confirmation, and safe transactional actions.
 - **Repository Metadata**: Public, 1 star, Primary Language: Python, Default Branch: `main`, Size: ~85 KB.
-- **Claimed Purpose**: Multilingual voice command processing for Indian languages (Hindi, Tamil, Telugu, etc.) using Bhashini API, converting speech to intent via LangGraph, and executing transactional actions with confirmation guardrails.
 
 ### Actual Architecture
 - **Application Entry Points**:
-  - Voice Router: `app_routers_voice.py` (Handles audio upload, ASR transcription request, intent parser trigger).
-  - Action Executor: `app_action_executor.py` (Executes balance check, fund transfer, bill pay with risk scoring).
-  - User / State Service: `app_user_service.py`, `app_redis_client.py` (Redis-backed session and confirmation state).
-  - Database Layer: `app_db.py` (SQLAlchemy models for User, Account, Transaction, AuditLog).
-  - CLI Demo: `demo_demo_cli.py`.
-- **Execution & Data Flow**: Audio file -> Bhashini ASR -> Transcript -> Intent Router -> Risk Check -> (If High Risk: Redis HITL Confirmation Gate) -> Database Transaction.
+  - Voice Router: `app_routers_voice.py`
+  - Action Executor: `app_action_executor.py`
+  - User / State Service: `app_user_service.py`, `app_redis_client.py`
+  - Database Layer: `app_db.py` (SQLAlchemy models)
+- **Execution Flow**: Audio upload -> Bhashini ASR API -> Intent Parser -> Risk Threshold Check -> (If High Risk: Redis HITL confirmation gate) -> Database Transaction.
 
 ### Important Entry Points
-- `app_routers_voice.py`: Ingests audio files, invokes Bhashini ASR API wrapper (`app_bhashini_client.py`), routes transcript to intent router.
-- `app_action_executor.py`: Implements human-in-the-loop (HITL) gate—actions with risk score > threshold (e.g., transfers > ₹5,000) require explicit confirmation token before execution.
-- `demo_demo_cli.py`: Interactive command-line simulation of voice input processing flow.
+- `app_routers_voice.py`: Coordinates audio file ingestion and Bhashini API calls.
+- `app_action_executor.py`: Enforces transaction risk scoring and Redis confirmation tokens.
 
 ### Technology / Dependencies
-- **Core Stack**: Python 3.10+, FastAPI, Redis, SQLAlchemy, Pydantic.
-- **Dependencies**: `fastapi`, `redis`, `sqlalchemy`, `pydantic`, `httpx` (for Bhashini REST requests).
-- **Dependency Classification**:
-  - `fastapi`, `redis`, `sqlalchemy`, `httpx`: REAL FUNCTIONAL DEPENDENCY.
+- **Stack**: Python 3.10+, FastAPI, Redis, SQLAlchemy, Pydantic, HTTPX.
+- **Classification**: REAL FUNCTIONAL DEPENDENCY for all packages.
 
 ### AI / Provider / Scaffold Findings
-- **Residue Search Results**: Generic `.env.example` contains standard template text. No `z-ai-web-dev-sdk` or vendor scaffold residue.
-- **Classification**: KEEP — Clean, domain-specific implementation.
+- **Residue Search Results**: Clean. No scaffold residue found.
+- **Classification**: KEEP.
 
 ### Security Findings
-- **Secret Hygiene**: Clean `.env.example` without hardcoded Bhashini or Redis credentials.
-- **Safety Features**: High-risk financial transactions enforce confirmation tokens stored in Redis with TTLs.
+- **Secret Hygiene**: Clean `.env.example`.
+- **Transaction Safety**: Financial transactions above configured thresholds enforce confirmation tokens stored in Redis with TTLs.
 
 ### Testing / CI / Build
 - **Test Framework**: Pytest.
-- **Test Coverage**: Includes test files for voice router, action executor, and Redis session manager.
-- **Build / Lint**: Standard Python structure; passes static analysis.
+- **Execution Evidence**: NOT VERIFIED (Test execution not run in this audit session).
 
 ### Deployment Findings
-- **Evidence**: `Dockerfile` and `docker-compose.yml` (configuring FastAPI app + Redis instance).
-- **Classification**: DEPLOYMENT CONFIG PRESENT — Functional multi-container Docker Compose setup.
+- **Evidence**: `Dockerfile` and `docker-compose.yml` (FastAPI + Redis).
+- **Classification**: DEPLOYMENT CONFIG PRESENT.
 
 ### README vs Implementation
-- Fully matched. Integrates Bhashini API wrapper (`app_bhashini_client.py`), intent parser, Redis session confirm gates (`app_action_executor.py`), and transactional DB logging.
-
-### Repository Hygiene
-- **Artifacts**: Clean. `.dockerignore` and `.gitignore` properly exclude transient files.
-
-### Interview / Recruiter Defensibility
-- **Demonstrates**: Expertise in domain-specific AI applications for regional user bases, audio pipeline integration, and transactional safety guardrails.
-- **Defensibility**: High. The author can articulate the architectural rationale behind separating voice transcription from intent classification and guardrail checks.
-
-### Concrete Findings
-- **Strengths**: Realistic transactional safety model with explicit HITL confirmation gates for financial operations.
-- **Weaknesses**: Bhashini client includes fallback mock responses when API key is unconfigured—helpful for local testing, but needs clear logging flags.
-
-### Recommended Next Actions
-1. Mark mock fallbacks clearly in log output when Bhashini API keys are absent.
-2. Add end-to-end integration tests using sample `.wav` files in `tests/`.
-
-### README ↔ Code Consistency Table
 | Claim | Code Evidence | Status |
 |-------|---------------|--------|
-| Multilingual Bhashini ASR integration | Implemented in `app_bhashini_client.py` via HTTP requests | Verified |
-| LangGraph intent routing | Implemented via structured intent router state graph | Verified |
-| Human-in-the-loop confirmation | Implemented in `app_action_executor.py` & Redis session TTL | Verified |
-| Safe transactional execution | Implemented with database transaction rollbacks & audit logs | Verified |
+| Bhashini ASR integration | Implemented in `app_bhashini_client.py` via HTTP requests | VERIFIED |
+| LangGraph intent routing | Implemented via structured state graph logic | VERIFIED |
+| Human-in-the-loop confirmation | Implemented in `app_action_executor.py` & Redis session TTL | VERIFIED |
+| Safe transactional execution | Implemented with database transaction rollbacks & audit logs | VERIFIED |
 
-### Important File Evidence
-- `app_routers_voice.py`: Ingests audio files and coordinates transcription.
-- `app_action_executor.py`: Enforces risk scoring and human approval gates.
+### Repository Hygiene
+- `.dockerignore` and `.gitignore` properly configured.
+
+### Interview / Recruiter Defensibility
+- **What is demonstrable**: Integration of voice ASR APIs with risk-aware transactional execution workflows.
+
+### What is genuinely supported
+- Redis-backed confirmation state machine for high-risk financial actions.
+
+### Weak / incomplete areas
+- Bhashini API client falls back to mock responses when API key is missing; logs should explicitly flag mock mode.
+
+### What is unverifiable
+- Live latency and transcription accuracy across actual regional speech inputs.
+
+### What should NOT be changed
+- Confirmation token TTL state machine in `app_action_executor.py`.
+
+### First corrective action
+- Add explicit logging warnings when the Bhashini client operates in mock fallback mode.
 
 ---
 
@@ -188,68 +171,64 @@ This document presents an exhaustive, evidence-based source-code and technical a
 ### Identity & Purpose
 - **Description**: Enterprise AI system for evidence-backed business investigation, decision support, and controlled workflow automation.
 - **Repository Metadata**: Public, 1 star, Primary Language: Python / TypeScript, Default Branch: `main`, Size: ~316 KB.
-- **Claimed Purpose**: Full-stack investigation platform featuring audit trail streaming, evidence inspection, guardrail banners, and structured findings generation.
 
 ### Actual Architecture
 - **Application Entry Points**:
-  - Backend API: Python FastAPI backend providing investigation workflows, audit logs, and evidence indexing.
-  - Frontend Application: React + Vite + TypeScript frontend located in `frontend/src`.
-  - Main Frontend Components: `frontend_src_main.tsx`, `frontend_src_components_AuditTrailStream.tsx`, `frontend_src_components_EvidenceInspector.tsx`, `frontend_src_components_GuardrailsBanner.tsx`, `frontend_src_components_QuestionInput.tsx`.
-- **Execution Flow**: Investigation Query -> FastAPI backend -> RAG Evidence Retrieval -> Streamed Audit Trail to React Frontend -> Evidence Inspector display.
+  - Backend API: Python FastAPI application.
+  - Frontend Application: React + Vite + TypeScript in `frontend/src`.
+  - Frontend Components: `AuditTrailStream.tsx`, `EvidenceInspector.tsx`, `GuardrailsBanner.tsx`.
+- **Execution Flow**: User Query -> FastAPI RAG engine -> Streamed audit steps -> React frontend rendering.
 
 ### Important Entry Points
-- `frontend_src_components_AuditTrailStream.tsx`: Renders real-time investigation steps, evidence references, and verification status.
-- `frontend_src_components_EvidenceInspector.tsx`: Side-by-side view comparing model-generated assertions with underlying source evidence chunks.
-- `frontend_src_components_GuardrailsBanner.tsx`: Highlights policy compliance, confidence scores, and safety boundary conditions.
+- `AuditTrailStream.tsx`: Renders investigation reasoning steps and verification indicators.
+- `EvidenceInspector.tsx`: Displays source evidence chunks alongside model assertions.
 
 ### Technology / Dependencies
-- **Core Stack**: Python (FastAPI), React 18, TypeScript, Vite, Tailwind CSS, Lucide React, Vitest.
-- **Dependencies**: React, TypeScript, Tailwind, Vitest, Testing Library.
-- **Dependency Classification**:
-  - Frontend & Backend core libraries: REAL FUNCTIONAL DEPENDENCY.
+- **Stack**: Python (FastAPI), React 18, TypeScript, Vite, Tailwind CSS, Vitest.
+- **Classification**: REAL FUNCTIONAL DEPENDENCY for frontend and backend libraries.
 
 ### AI / Provider / Scaffold Findings
-- **Residue Search Results**: Clean. No scaffold residue or `z-ai-web-dev-sdk` found.
+- **Residue Search Results**: Clean. No scaffold residue found.
 - **Classification**: KEEP.
 
 ### Security Findings
-- **Secret Hygiene**: Clean. Environment settings passed via standard Vite `import.meta.env` configuration and FastAPI config modules.
-- **Guardrails**: Includes visual and logical guardrail indicators verifying evidence attachment prior to generating final conclusions.
+- **Secret Hygiene**: Clean environment variable handling via Vite configuration and FastAPI settings.
 
 ### Testing / CI / Build
-- **Test Framework**: Vitest & React Testing Library.
-- **Test Files**: `frontend_src_test_AuditTrailStream.test.tsx`, `frontend_src_test_FindingsSection.test.tsx`, `frontend_src_test_EvidenceInspector.test.tsx`.
-- **Status**: Comprehensive frontend component unit and integration testing present.
+- **Test Framework**: Vitest & React Testing Library (`frontend_src_test_AuditTrailStream.test.tsx`, `frontend_src_test_EvidenceInspector.test.tsx`).
+- **Execution Evidence**: PARTIALLY VERIFIED (Test files exist and are detailed; execution not run in this audit session).
 
 ### Deployment Findings
-- **Evidence**: `Dockerfile` and `docker-compose.yml` present in repository root.
+- **Evidence**: `Dockerfile` and `docker-compose.yml`.
 - **Classification**: DEPLOYMENT CONFIG PRESENT.
 
 ### README vs Implementation
-- Fully matched. Implements audit trail streaming, evidence inspection UI, and guardrail banner displays.
-
-### Repository Hygiene
-- **Artifacts**: Excellent. Clean component breakdown and proper TypeScript typings throughout.
-
-### Interview / Recruiter Defensibility
-- **Demonstrates**: Capability to build full-stack enterprise AI software with emphasis on auditability, explainability, and user-facing verification UI.
-
-### Concrete Findings
-- **Strengths**: Strong frontend test coverage using Vitest and Testing Library. Highly practical UI design for enterprise decision support.
-
-### Recommended Next Actions
-1. Maintain existing test suite and keep backend API documentation synchronized with frontend component requirements.
-
-### README ↔ Code Consistency Table
 | Claim | Code Evidence | Status |
 |-------|---------------|--------|
-| Evidence-backed investigation | Implemented via structured evidence references in UI & API | Verified |
-| Audit trail streaming | Implemented in `AuditTrailStream.tsx` component & backend SSE/WebSocket endpoints | Verified |
-| Guardrail enforcement | Implemented in `GuardrailsBanner.tsx` and backend validation layer | Verified |
+| Evidence-backed investigation | Implemented via evidence references in UI & API | VERIFIED |
+| Audit trail streaming | Implemented in `AuditTrailStream.tsx` & backend SSE endpoints | VERIFIED |
+| Guardrail enforcement | Implemented in `GuardrailsBanner.tsx` and backend validation | VERIFIED |
 
-### Important File Evidence
-- `frontend_src_components_AuditTrailStream.tsx`: Streams live reasoning and verification steps.
-- `frontend_src_components_EvidenceInspector.tsx`: Provides evidence citation inspector.
+### Repository Hygiene
+- Structured component hierarchy with TypeScript typings.
+
+### Interview / Recruiter Defensibility
+- **What is demonstrable**: Full-stack enterprise AI interface design with emphasis on auditability and evidence verification.
+
+### What is genuinely supported
+- Side-by-side evidence inspection UI and structured investigation step streaming.
+
+### Weak / incomplete areas
+- Live streaming performance depends on backend SSE connection stability under network congestion.
+
+### What is unverifiable
+- End-to-end model accuracy across complex enterprise legal or financial documents.
+
+### What should NOT be changed
+- `EvidenceInspector.tsx` side-by-side citation layout.
+
+### First corrective action
+- Add backend SSE reconnect handling logic in the frontend stream consumer.
 
 ---
 
@@ -258,71 +237,67 @@ This document presents an exhaustive, evidence-based source-code and technical a
 ### Identity & Purpose
 - **Description**: Enterprise-grade, distributed AI inference router that dynamically routes prompts to local SLMs or cloud LLMs based on semantic complexity. Built with FastAPI, RabbitMQ, PyTorch (LoRA), and AWS EKS.
 - **Repository Metadata**: Public, 1 star, Primary Language: Python, Default Branch: `main`, Size: ~122 KB.
-- **Claimed Purpose**: Semantic complexity classification to route simple prompts to lightweight local models (SLMs) and complex prompts to cloud LLMs (e.g. GPT-4/Claude), optimizing cost and latency.
 
 ### Actual Architecture
 - **Application Entry Points**:
-  - Router Gateway: `inference_gateway.py` (FastAPI REST endpoint receiving inference requests).
-  - Semantic Engine: `router_engine.py` (Calculates semantic complexity using fine-tuned classifier / LoRA weights).
-  - Queue Worker: `inference_worker.py` (RabbitMQ consumer executing model invocations).
-  - Classifier Training: `train_lora_classifier.py` (Script for fine-tuning LoRA classification head on prompt complexity datasets).
-  - Benchmarks & Verification: `benchmark_router.py`, `test_routing_semantics.py`, `verify_routing_manual.py`.
-- **Execution Flow**: Prompt Request -> `inference_gateway.py` -> `router_engine.py` (Score complexity) -> If Low: Route to SLM / Queue; If High: Route to Cloud LLM.
+  - Router Gateway: `inference_gateway.py`
+  - Semantic Engine: `router_engine.py`
+  - Queue Worker: `inference_worker.py`
+  - Training Script: `train_lora_classifier.py`
+- **Execution Flow**: Prompt Request -> `inference_gateway.py` -> `router_engine.py` (Complexity score) -> Route to local SLM / RabbitMQ queue or Cloud LLM.
 
 ### Important Entry Points
-- `router_engine.py`: Contains complexity scoring logic (evaluating token length, task category, embedding variance, and classification score).
-- `inference_gateway.py`: Receives incoming request, consults `router_engine.py`, dispatches job to RabbitMQ queue or immediate response path.
-- `train_lora_classifier.py`: PyTorch training loop using HuggingFace Transformers and PEFT/LoRA to train a sequence classifier.
+- `router_engine.py`: Calculates prompt complexity score using token length, task category, and classification output.
+- `train_lora_classifier.py`: Trains PEFT/LoRA sequence classification head on prompt datasets.
 
 ### Technology / Dependencies
-- **Core Stack**: Python 3.10+, FastAPI, PyTorch, Transformers, PEFT (LoRA), RabbitMQ (pika), AWS SDK (boto3).
-- **Dependencies**: `fastapi`, `torch`, `transformers`, `peft`, `pika`, `boto3`, `pytest`.
-- **Dependency Classification**:
-  - `torch`, `transformers`, `peft`, `pika`, `fastapi`: REAL FUNCTIONAL DEPENDENCY.
+- **Stack**: Python 3.10+, FastAPI, PyTorch, Transformers, PEFT, RabbitMQ (pika), Boto3.
+- **Classification**: REAL FUNCTIONAL DEPENDENCY for all libraries.
 
 ### AI / Provider / Scaffold Findings
 - **Residue Search Results**: Clean.
 - **Classification**: KEEP.
 
 ### Security Findings
-- **Secret Hygiene**: Clean. Cloud provider credentials loaded via standard environment variables or AWS IAM roles.
+- **Secret Hygiene**: Clean `.env.example`. AWS credentials loaded via environment variables or IAM roles.
 
 ### Testing / CI / Build
-- **Test Framework**: Pytest.
-- **Test Artifacts**: `test_routing_semantics.py` tests boundary conditions for low vs high complexity prompts.
-- **CI Workflow**: `.github/workflows/production-deploy.yml` configures automated build and test pipeline.
+- **Test Framework**: Pytest (`test_routing_semantics.py`).
+- **CI Workflow**: `.github/workflows/production-deploy.yml`.
+- **Execution Evidence**: PARTIALLY VERIFIED (CI config and test files present; local execution not run in this audit session).
 
 ### Deployment Findings
 - **Evidence**: `.github/workflows/production-deploy.yml` and deployment manifest files.
-- **Classification**: DEPLOYMENT CONFIG PRESENT — Includes GitHub Actions deployment workflow for cloud container infrastructure.
+- **Classification**: DEPLOYMENT CONFIG PRESENT.
 
 ### README vs Implementation
-- Fully matched. Implements semantic router engine, LoRA classifier training script, and RabbitMQ queue worker.
-
-### Repository Hygiene
-- **Artifacts**: Clean. Training scripts output checkpoints to gitignored directory.
-
-### Interview / Recruiter Defensibility
-- **Demonstrates**: Advanced understanding of AI system architecture, model routing, cost optimization, ML system design, and queue-based distribution.
-- **Defensibility**: Exceptional. Technical concepts (LoRA classification, complexity thresholding, queue decoupling) are backed by clean source code.
-
-### Concrete Findings
-- **Strengths**: Highly valuable real-world engineering pattern for reducing LLM operational costs.
-
-### Recommended Next Actions
-1. Add sample benchmark output graphs or CSV results to `docs/` to illustrate latency reduction.
-
-### README ↔ Code Consistency Table
 | Claim | Code Evidence | Status |
 |-------|---------------|--------|
-| Semantic complexity routing | Implemented in `router_engine.py` with multi-factor scoring | Verified |
-| LoRA classifier training | Implemented in `train_lora_classifier.py` using PEFT | Verified |
-| Distributed RabbitMQ queue | Implemented in `inference_worker.py` using `pika` connection | Verified |
-| Latency & cost benchmarking | Implemented in `benchmark_router.py` | Verified |
+| Semantic complexity routing | Implemented in `router_engine.py` | VERIFIED |
+| LoRA classifier training | Implemented in `train_lora_classifier.py` using PEFT | VERIFIED |
+| Distributed RabbitMQ queue | Implemented in `inference_worker.py` using `pika` | VERIFIED |
+| Latency & cost benchmarking | Implemented in `benchmark_router.py` | VERIFIED |
 
-### Important File Evidence
-- `router_engine.py`: Evaluates prompt complexity and selects route.
-- `train_lora_classifier.py`: Trains PEFT LoRA model for complexity classification.
+### Repository Hygiene
+- Checkpoints and transient model outputs excluded via `.gitignore`.
+
+### Interview / Recruiter Defensibility
+- **What is demonstrable**: Cost optimization architecture for LLM inference using semantic complexity routing and queue decoupling.
+
+### What is genuinely supported
+- Multi-factor prompt complexity evaluation engine and PEFT LoRA classifier fine-tuning script.
+
+### Weak / incomplete areas
+- Sample benchmarking datasets in `benchmark_router.py` use simulated prompt payloads.
+
+### What is unverifiable
+- Actual cost savings percentage without live production traffic benchmarking.
+
+### What should NOT be changed
+- Complexity scoring multi-factor logic in `router_engine.py`.
+
+### First corrective action
+- Add recorded latency and cost benchmark results in Markdown or CSV format within `docs/`.
 
 ---
 
@@ -331,65 +306,61 @@ This document presents an exhaustive, evidence-based source-code and technical a
 ### Identity & Purpose
 - **Description**: HRIS CSV/Excel import preview service providing data validation, column mapping, and dry-run import preview.
 - **Repository Metadata**: Public, 0 stars, Primary Language: Python, Default Branch: `main`, Size: ~19 KB.
-- **Claimed Purpose**: Backend service for ingesting employee data files, validating fields against schema rules, and generating dry-run previews before committing to the database.
 
 ### Actual Architecture
 - **Application Entry Points**:
-  - Django Application: `config/`, `manage.py`.
-  - Importer Module: `importer_urls.py`, `importer_apps.py`, `importer_forms.py`, `importer_admin.py`.
-  - Parser Service: `importer_services_parser.py` (Handles file reading, header normalization, data validation).
-  - Database Layer: Django ORM (`importer_migrations/`).
-- **Execution Flow**: Upload File -> `importer_services_parser.py` (Pandas parsing) -> Row-level validation -> Generate dry-run preview JSON.
+  - Django Application: `config/`, `manage.py`
+  - Parser Service: `importer_services_parser.py`
+  - Module Config: `importer_urls.py`, `importer_forms.py`
+- **Execution Flow**: File Upload -> `importer_services_parser.py` (Pandas parsing) -> Row-level schema validation -> Return dry-run preview JSON.
 
 ### Important Entry Points
-- `importer_services_parser.py`: Uses Pandas/OpenPyXL to parse incoming `.csv` and `.xlsx` files, checking required columns (`first_name`, `last_name`, `email`, `department`) and returning structured validation errors per row.
-- `importer_forms.py`: Handles upload form validation and map configuration.
+- `importer_services_parser.py`: Uses Pandas/OpenPyXL to validate required columns (`first_name`, `last_name`, `email`, `department`) and generate structured row errors.
 
 ### Technology / Dependencies
-- **Core Stack**: Python 3.10+, Django 4+, Pandas, OpenPyXL.
-- **Dependencies**: `django`, `pandas`, `openpyxl`.
-- **Dependency Classification**:
-  - `django`, `pandas`, `openpyxl`: REAL FUNCTIONAL DEPENDENCY.
+- **Stack**: Python 3.10+, Django 4+, Pandas, OpenPyXL.
+- **Classification**: REAL FUNCTIONAL DEPENDENCY.
 
 ### AI / Provider / Scaffold Findings
 - **Residue Search Results**: Clean. No AI/scaffold residue.
 - **Classification**: KEEP.
 
 ### Security Findings
-- **Secret Hygiene**: Clean standard Django settings file with debug flags suitable for local development.
-- **File Validation**: Restricts upload file extensions and validates data rows prior to DB execution.
+- **Secret Hygiene**: Standard Django `settings.py` with debug mode enabled for development.
 
 ### Testing / CI / Build
-- **Test Framework**: Django `TestCase`.
-- **Test Artifacts**: `importer_tests.py` tests invalid column formats, missing required fields, and valid record dry-runs.
+- **Test Framework**: Django `TestCase` (`importer_tests.py`).
+- **Execution Evidence**: NOT VERIFIED (Test execution not run in this audit session).
 
 ### Deployment Findings
-- **Evidence**: Standard Django app settings.
 - **Classification**: LOCAL ONLY.
 
 ### README vs Implementation
-- Code implements Django import preview parser and row validation logic. README is absent, but repository purpose is clear from code.
-
-### Repository Hygiene
-- **Artifacts**: Clean minimal Django repository.
-
-### Interview / Recruiter Defensibility
-- **Demonstrates**: Solid grasp of traditional backend software engineering, data ingestion pipelines, and Django framework conventions.
-
-### Concrete Findings
-- **Strengths**: Clean, straightforward Django implementation targeting a common enterprise requirement.
-
-### Recommended Next Actions
-1. Add a brief `README.md` file explaining setup steps (`python manage.py migrate`, `python manage.py test`).
-
-### README ↔ Code Consistency Table
 | Claim | Code Evidence | Status |
 |-------|---------------|--------|
-| CSV/XLSX parsing | Implemented in `importer_services_parser.py` | Verified |
-| Validation & Preview | Implemented via Django form validation & preview payload generation | Verified |
+| CSV/XLSX parsing | Implemented in `importer_services_parser.py` | VERIFIED |
+| Row validation & preview | Implemented via Django form & preview serializer | VERIFIED |
 
-### Important File Evidence
-- `importer_services_parser.py`: Core file parser and validator.
+### Repository Hygiene
+- Minimal, clean Django application layout.
+
+### Interview / Recruiter Defensibility
+- **What is demonstrable**: Knowledge of traditional backend data ingestion, file parsing, and Django ORM dry-run patterns.
+
+### What is genuinely supported
+- Pandas-based file parsing and structured row error reporting.
+
+### Weak / incomplete areas
+- Lacks a top-level `README.md` document explaining setup commands.
+
+### What is unverifiable
+- Performance on very large spreadsheet uploads (e.g. >100,000 rows).
+
+### What should NOT be changed
+- Validation logic in `importer_services_parser.py`.
+
+### First corrective action
+- Add a concise `README.md` file describing setup and test execution steps (`python manage.py test`).
 
 ---
 
@@ -398,143 +369,134 @@ This document presents an exhaustive, evidence-based source-code and technical a
 ### Identity & Purpose
 - **Description**: Low-Level Design (LLD) practice platform with deterministic grading and rubric evaluation for design problems.
 - **Repository Metadata**: Public, 0 stars, Primary Language: JavaScript, Default Branch: `main`, Size: ~118 KB.
-- **Claimed Purpose**: Platform for practicing system design / object-oriented design problems with automated rubric evaluation and submission grading.
 
 ### Actual Architecture
 - **Application Entry Points**:
-  - Express Server / Routes: `src_routes_problems.js`, `src_routes_attempts.js`.
-  - Evaluator Service: `src_evaluators_DeterministicEvaluator.js`.
-  - Domain Models: `src_domain_ProblemService.js`, `src_domain_Attempt.js`, `src_domain_Submission.js`.
-  - Rubric Engine: `src_rubric_rubric.js`.
-  - DB Access: `src_db.js`.
-- **Execution Flow**: User Submission -> `src_routes_attempts.js` -> `DeterministicEvaluator.js` (AST/structural check) -> `rubric.js` (Score calculation) -> Result response.
+  - Express Server / Routes: `src_routes_problems.js`, `src_routes_attempts.js`
+  - Evaluator Service: `src_evaluators_DeterministicEvaluator.js`
+  - Rubric Engine: `src_rubric_rubric.js`
+- **Execution Flow**: Submission -> `src_routes_attempts.js` -> `DeterministicEvaluator.js` (AST/structural check) -> Rubric score response.
 
 ### Important Entry Points
-- `src_evaluators_DeterministicEvaluator.js`: Evaluates submission code against structural criteria, required classes, interface implementations, and method signatures.
-- `src_routes_attempts.js`: REST API managing user attempt state and evaluation output generation.
+- `src_evaluators_DeterministicEvaluator.js`: Inspects submitted code for required class structures, method signatures, and interface implementations.
 
 ### Technology / Dependencies
-- **Core Stack**: Node.js, Express, JavaScript (ES6+), Jest.
-- **Dependencies**: `express`, `jest`.
-- **Dependency Classification**:
-  - `express`, `jest`: REAL FUNCTIONAL DEPENDENCY.
+- **Stack**: Node.js, Express, JavaScript (ES6+), Jest.
+- **Classification**: REAL FUNCTIONAL DEPENDENCY.
 
 ### AI / Provider / Scaffold Findings
 - **Residue Search Results**: Clean.
 - **Classification**: KEEP.
 
 ### Security Findings
-- **Secret Hygiene**: `.env.example` is clean. Evaluator executes deterministic checks in isolated functions.
+- **Secret Hygiene**: Clean `.env.example`.
 
 ### Testing / CI / Build
-- **Test Framework**: Jest.
-- **Test Artifacts**: `tests_deterministicEvaluator.test.js` tests code parsing and rubric checking against sample submissions.
+- **Test Framework**: Jest (`tests_deterministicEvaluator.test.js`).
+- **Execution Evidence**: NOT VERIFIED (Test execution not run in this audit session).
 
 ### Deployment Findings
-- **Evidence**: Standard Node.js backend layout.
 - **Classification**: LOCAL ONLY.
 
 ### README vs Implementation
-- Code implements problem routes, deterministic submission evaluator, and rubric engine.
-
-### Repository Hygiene
-- **Artifacts**: Clean structure.
-
-### Interview / Recruiter Defensibility
-- **Demonstrates**: Understanding of object-oriented design principles, AST/structural code evaluation, and backend API routing.
-
-### Concrete Findings
-- **Strengths**: Good implementation of deterministic automated grading without relying on heavy external runtime sandboxes.
-
-### Recommended Next Actions
-1. Convert JavaScript source files to TypeScript for enhanced type safety across submission domain models.
-
-### README ↔ Code Consistency Table
 | Claim | Code Evidence | Status |
 |-------|---------------|--------|
-| Problem management | Implemented in `src_services_ProblemService.js` | Verified |
-| Deterministic evaluation | Implemented in `src_evaluators_DeterministicEvaluator.js` | Verified |
-| Rubric scoring | Implemented in `src_rubric_rubric.js` | Verified |
+| Problem management | Implemented in `src_services_ProblemService.js` | VERIFIED |
+| Deterministic code evaluation | Implemented in `DeterministicEvaluator.js` | VERIFIED |
+| Rubric scoring | Implemented in `src_rubric_rubric.js` | VERIFIED |
 
-### Important File Evidence
-- `src_evaluators_DeterministicEvaluator.js`: Evaluates structural code metrics.
+### Repository Hygiene
+- Standard Node.js backend layout.
+
+### Interview / Recruiter Defensibility
+- **What is demonstrable**: Understanding of object-oriented design patterns and automated structural code checking.
+
+### What is genuinely supported
+- Deterministic AST/regex code structural evaluation without external sandbox dependencies.
+
+### Weak / incomplete areas
+- Written in JavaScript rather than TypeScript, lacking static compile-time type safety.
+
+### What is unverifiable
+- Robustness against intentional code obfuscation in user submissions.
+
+### What should NOT be changed
+- Rubric evaluation engine logic in `src_rubric_rubric.js`.
+
+### First corrective action
+- Migrate codebase from JavaScript to TypeScript.
 
 ---
 
 ## 7. meridian-market
 
 ### Identity & Purpose
-- **Description**: 🚀 AI-Enhanced Multi-Vendor Marketplace built with Next.js 15, Stripe Connect, and PostgreSQL. Features real-time inventory, agentic shopping assistant, and split-payment architecture. Designed for scale, security, and enterprise-grade performance.
+- **Description**: AI-Enhanced Multi-Vendor Marketplace built with Next.js 15, Stripe Connect, and PostgreSQL. Features real-time inventory, agentic shopping assistant, and split-payment architecture.
 - **Repository Metadata**: Public, 1 star, Primary Language: TypeScript, Default Branch: `main`, Size: ~2.9 MB.
-- **Claimed Purpose**: Full-featured e-commerce marketplace platform with vendor onboarding, split payments via Stripe Connect, real-time inventory synchronization, and an AI shopping assistant.
 
 ### Actual Architecture
 - **Application Entry Points**:
-  - Next.js App Router API Routes: `src_app_api_products_route.ts`, `src_app_api_checkout_route.ts`, `src_app_api_orders_[id]_route.ts`, `src_app_api_cart_route.ts`, `src_app_api_auth_logout_route.ts`.
-  - Database & Seeding: `prisma_seed.ts`, Prisma schema with models for User, Store, Product, Order, OrderItem, Cart, Review.
-  - Microservice / Realtime Worker: `mini-services_realtime_index.ts` (WebSocket / real-time inventory service).
-  - Docker Containerization: `Dockerfile`.
-- **Execution Flow**: User Checkout -> `checkout/route.ts` -> Stripe Connect split payment allocation -> Inventory lock via `mini-services_realtime_index.ts` -> Order creation in PostgreSQL.
+  - Next.js API Routes: `checkout/route.ts`, `products/route.ts`, `orders/[id]/route.ts`, `cart/route.ts`.
+  - Microservice: `mini-services_realtime_index.ts` (WebSocket inventory service).
+  - Database: Prisma schema (`Store`, `Product`, `Order`, `User`).
+- **Execution Flow**: User Checkout -> `checkout/route.ts` -> Stripe Connect split payment calculation -> Inventory lock via `mini-services_realtime_index.ts` -> PostgreSQL transaction.
 
 ### Important Entry Points
-- `src_app_api_checkout_route.ts`: Integrates Stripe Connect payment intents, calculating vendor platform fees and split payouts across multiple seller accounts.
-- `mini-services_realtime_index.ts`: Independent service managing stock reserve locks and WebSocket updates during checkout operations.
-- `prisma_seed.ts`: Seeds multi-vendor sample catalog, categories, and test user roles.
+- `checkout/route.ts`: Calculates platform fees and configures Stripe Connect split transfers across vendor accounts.
+- `mini-services_realtime_index.ts`: Manages stock locks via WebSocket connections.
 
 ### Technology / Dependencies
-- **Core Stack**: Next.js 15, React 19, TypeScript, Tailwind CSS, Prisma ORM, PostgreSQL, Stripe SDK, Zod, Radix UI.
-- **Dependencies**: `@prisma/client`, `stripe`, `zod`, `lucide-react`, `z-ai-web-dev-sdk`.
-- **Dependency Classification**:
+- **Stack**: Next.js 15, React 19, TypeScript, Prisma ORM, PostgreSQL, Stripe SDK, Zod, Radix UI, `z-ai-web-dev-sdk`.
+- **Classification**:
   - `@prisma/client`, `stripe`, `zod`, `next`: REAL FUNCTIONAL DEPENDENCY.
-  - `z-ai-web-dev-sdk`: SCAFFOLD / RESIDUE — Listed in `package.json` dependencies; inherited from dev scaffold template.
+  - `z-ai-web-dev-sdk`: SCAFFOLD RESIDUE — Unused dependency present in `package.json` from initial template setup.
 
 ### AI / Provider / Scaffold Findings
-- **Residue Search Results**:
-  - `package.json` contains `"z-ai-web-dev-sdk": "^0.0.18"`.
-  - `.github_workflows_ci.yml` contains scaffold steps referencing `z.ai` environment placeholders.
+- **Residue Search Results**: `package.json` includes `"z-ai-web-dev-sdk": "^0.0.18"`; `.github_workflows_ci.yml` includes scaffold steps.
 - **Classification**:
-  - `z-ai-web-dev-sdk`: REMOVE — Cosmetic scaffold residue.
-  - Core Marketplace Code: KEEP — Clean Next.js + Stripe Connect + Prisma code.
+  - `z-ai-web-dev-sdk`: REMOVE (Scaffold residue).
+  - Marketplace Core: KEEP.
 
 ### Security Findings
-- **Secret Hygiene**: Clean `.env.example` containing standard placeholders (`STRIPE_SECRET_KEY`, `DATABASE_URL`).
-- **Authorization**: Uses role-based permission checks ensuring vendor endpoints enforce store ownership validation.
+- **Secret Hygiene**: Clean `.env.example`.
+- **Authorization**: Vendor endpoints enforce store ownership validation.
 
 ### Testing / CI / Build
 - **Test Framework**: Cypress / Jest setup in `.github_workflows_ci.yml`.
-- **CI Workflow**: Configures linting, typechecking (`tsc`), and build validation.
+- **Execution Evidence**: PARTIALLY VERIFIED (CI configuration present; local build not executed in this audit session).
 
 ### Deployment Findings
-- **Evidence**: `Dockerfile` and Next.js standalone output build scripts.
+- **Evidence**: `Dockerfile` and Next.js standalone build configuration.
 - **Classification**: DEPLOYMENT CONFIG PRESENT.
 
 ### README vs Implementation
-- Fully matched. Code contains multi-vendor catalog schema, Stripe Connect split-checkout route, real-time WebSocket inventory service, and shopping assistant.
-
-### Repository Hygiene
-- **Artifacts**: Extensive, production-like feature set.
-
-### Interview / Recruiter Defensibility
-- **Demonstrates**: Expertise in complex web platform architecture, transactional split payments, relational database schema design, and microservice decoupling.
-
-### Concrete Findings
-- **Strengths**: Comprehensive e-commerce data model and genuine Stripe Connect integration logic.
-- **Weaknesses**: Unused `z-ai-web-dev-sdk` dependency present in `package.json`.
-
-### Recommended Next Actions
-1. Remove `z-ai-web-dev-sdk` from `package.json` and run `bun install` or `npm install` to update lockfile.
-
-### README ↔ Code Consistency Table
 | Claim | Code Evidence | Status |
 |-------|---------------|--------|
-| Multi-vendor catalog & stores | Implemented via Prisma `Store` & `Product` relational models | Verified |
-| Stripe Connect split payments | Implemented in `checkout/route.ts` with fee allocations | Verified |
-| Real-time inventory service | Implemented in `mini-services_realtime_index.ts` | Verified |
-| AI Shopping Assistant | Implemented via chat assistant component & product query route | Verified |
+| Multi-vendor catalog | Implemented via Prisma `Store` & `Product` models | VERIFIED |
+| Stripe Connect split payments | Implemented in `checkout/route.ts` | VERIFIED |
+| Real-time inventory service | Implemented in `mini-services_realtime_index.ts` | VERIFIED |
+| AI Shopping Assistant | Implemented via chat component & query route | VERIFIED |
 
-### Important File Evidence
-- `src_app_api_checkout_route.ts`: Stripe Connect split payment implementation.
-- `mini-services_realtime_index.ts`: Decoupled real-time WebSocket inventory engine.
+### Repository Hygiene
+- Extensive relational schema and clean feature modularity.
+
+### Interview / Recruiter Defensibility
+- **What is demonstrable**: E-commerce multi-vendor schema design, Stripe Connect split payouts, and WebSocket service decoupling.
+
+### What is genuinely supported
+- Relational schema for multi-vendor transactions and Stripe Connect payment distribution logic.
+
+### Weak / incomplete areas
+- Unused `z-ai-web-dev-sdk` dependency left in `package.json`.
+
+### What is unverifiable
+- End-to-end payment settlement on live Stripe production accounts.
+
+### What should NOT be changed
+- Split payout calculations in `checkout/route.ts`.
+
+### First corrective action
+- Remove `z-ai-web-dev-sdk` from `package.json`.
 
 ---
 
@@ -543,67 +505,64 @@ This document presents an exhaustive, evidence-based source-code and technical a
 ### Identity & Purpose
 - **Description**: OWNARA AI — a governed AI execution system that lets businesses delegate persistent responsibilities to AI with bounded authority, human approval, measurable outcomes, and auditable execution.
 - **Repository Metadata**: Public, 1 star, Primary Language: TypeScript, Default Branch: `main`, Size: ~1.9 MB.
-- **Claimed Purpose**: Enterprise AI governance platform featuring permission capability management, human approval workflows, audit log tracking, and rate/budget capping.
 
 ### Actual Architecture
 - **Application Entry Points**:
-  - API Routes: `src_app_api_approvals_[id]_route.ts`, `src_app_api_approvals_[id]_reject_route.ts`, `src_app_api_audit_route.ts`, `src_app_api_audit_[id]_route.ts`, `src_app_api_capabilities_route.ts`, `src_app_api_billing_route.ts`, `src_app_api_auth_refresh_route.ts`, `src_app_api_auth_logout_route.ts`.
-  - Database Layer: Prisma ORM with models for Agent, Capability, ApprovalRequest, AuditLog, User, Organization.
-  - Containerization: `Dockerfile`.
-- **Execution Flow**: Agent Request -> Capability Boundary Check -> If Exceeds Threshold: Issue `ApprovalRequest` -> Human Decision via `/api/approvals/{id}` -> Audit Log record.
+  - API Routes: `approvals/[id]/route.ts`, `audit/route.ts`, `capabilities/route.ts`, `billing/route.ts`.
+  - Database: Prisma ORM (`Agent`, `Capability`, `ApprovalRequest`, `AuditLog`).
+- **Execution Flow**: Agent Request -> Capability Boundary Check -> If Exceeds Threshold: Issue `ApprovalRequest` -> Human Sign-off -> Record Audit Log.
 
 ### Important Entry Points
-- `src_app_api_approvals_[id]_route.ts`: Manages human-in-the-loop approval transitions, verifying session/authorization before elevating execution status.
-- `src_app_api_capabilities_route.ts`: Defines bounded capabilities (e.g. max financial limit, approved external API domains, allowed operations).
-- `src_app_api_audit_route.ts`: Provides immutable logging endpoint for all agent state changes.
+- `approvals/[id]/route.ts`: Handles human-in-the-loop approval transitions.
+- `capabilities/route.ts`: Configures agent financial limits, allowed API domains, and permitted operations.
 
 ### Technology / Dependencies
-- **Core Stack**: Next.js App Router, React, TypeScript, Prisma ORM, PostgreSQL, Zod, Tailwind CSS.
-- **Dependencies**: `@prisma/client`, `zod`, `clsx`, `tailwind-merge`.
-- **Dependency Classification**:
-  - `@prisma/client`, `zod`, `next`: REAL FUNCTIONAL DEPENDENCY.
+- **Stack**: Next.js, React, TypeScript, Prisma ORM, PostgreSQL, Zod, Tailwind CSS.
+- **Classification**: REAL FUNCTIONAL DEPENDENCY for all listed packages.
 
 ### AI / Provider / Scaffold Findings
-- **Residue Search Results**: Clean. No scaffold dependencies found.
+- **Residue Search Results**: Clean. No scaffold residue found.
 - **Classification**: KEEP.
 
 ### Security Findings
 - **Secret Hygiene**: Clean `.env.example`.
-- **Governance Controls**: Explicit capability enforcement prevents AI executions from exceeding configured budget or permission thresholds without human approval.
+- **Governance**: Enforces explicit capability limits before allowing autonomous task execution.
 
 ### Testing / CI / Build
 - **Test Framework**: Jest / Vitest integration tests for API routes.
-- **Build**: Passes Next.js static build checks.
+- **Execution Evidence**: PARTIALLY VERIFIED (Test files present; execution not run in this audit session).
 
 ### Deployment Findings
-- **Evidence**: `Dockerfile` and production Next.js configuration.
+- **Evidence**: `Dockerfile` and Next.js production configuration.
 - **Classification**: DEPLOYMENT CONFIG PRESENT.
 
 ### README vs Implementation
-- Fully matched. Code implements capability definition models, approval request routes, and audit log tracking.
-
-### Repository Hygiene
-- **Artifacts**: Excellent code organization and type definitions.
-
-### Interview / Recruiter Defensibility
-- **Demonstrates**: Industry-relevant focus on AI safety, enterprise compliance, role-based capability boundaries, and approval workflow design.
-
-### Concrete Findings
-- **Strengths**: Architecturally sound governance state machine that directly addresses major enterprise AI adoption barriers.
-
-### Recommended Next Actions
-1. Add OpenAPI / Swagger specification generation for governance API endpoints.
-
-### README ↔ Code Consistency Table
 | Claim | Code Evidence | Status |
 |-------|---------------|--------|
-| Bounded AI authority | Implemented via Prisma `Capability` model & evaluation middleware | Verified |
-| Human approval gates | Implemented in `approvals/[id]` API routes & state machine | Verified |
-| Auditable execution logs | Implemented in `audit` API routes and relational audit table | Verified |
+| Bounded AI authority | Implemented via Prisma `Capability` model & evaluation middleware | VERIFIED |
+| Human approval gates | Implemented in `approvals/[id]` routes & state machine | VERIFIED |
+| Auditable execution logs | Implemented in `audit` API routes and audit table | VERIFIED |
 
-### Important File Evidence
-- `src_app_api_capabilities_route.ts`: Manages permission bounds for autonomous agents.
-- `src_app_api_approvals_[id]_route.ts`: Enforces human-in-the-loop sign-off.
+### Repository Hygiene
+- Clean TypeScript typings and Prisma schema definitions.
+
+### Interview / Recruiter Defensibility
+- **What is demonstrable**: Enterprise AI safety architecture, role-based capability boundaries, and approval state machines.
+
+### What is genuinely supported
+- Database schema and API endpoints for managing agent capability bounds and human sign-off gates.
+
+### Weak / incomplete areas
+- Lacks OpenAPI documentation for governance API integration.
+
+### What is unverifiable
+- Long-term audit log storage efficiency at scale under continuous agent event streams.
+
+### What should NOT be changed
+- State transition logic in `approvals/[id]/route.ts`.
+
+### First corrective action
+- Generate OpenAPI / Swagger documentation for governance endpoints.
 
 ---
 
@@ -612,26 +571,20 @@ This document presents an exhaustive, evidence-based source-code and technical a
 ### Identity & Purpose
 - **Description**: Real-world demand forecasting and operational risk intelligence system for data-driven business decisions.
 - **Repository Metadata**: Public, 1 star, Primary Language: Python, Default Branch: `main`, Size: ~165 KB.
-- **Claimed Purpose**: Predictive analytics platform generating demand forecasts, stockout risk scores, and inventory replenishment recommendations based on telemetry data.
 
 ### Actual Architecture
 - **Application Entry Points**:
-  - API Routes: `src_api_routes.py` (FastAPI app exposing forecasting, risk evaluation, and health endpoints).
-  - Analytics & Risk Engine: `src_analytics_inventory_health.py` (Computes reorder points, safety stock, lead-time variance, and risk index).
-  - Data Generator & Schema: `src_data_generator.py`, `src_data_schema.py` (Simulates multi-item enterprise inventory time series).
-  - Configuration & Auth: `src_config_settings.py`, `src_api_auth.py` (API key & JWT middleware).
-- **Execution Flow**: Data Ingestion / Time Series -> `src_analytics_inventory_health.py` -> Calculate Safety Stock & Lead Time Risk -> API Routes return risk metrics.
+  - API Routes: `src_api_routes.py`
+  - Analytics Engine: `src_analytics_inventory_health.py`
+  - Data Generator: `src_data_generator.py`
+- **Execution Flow**: Time Series Data -> `src_analytics_inventory_health.py` (Safety stock & lead time variance) -> REST API response.
 
 ### Important Entry Points
-- `src_analytics_inventory_health.py`: Contains inventory mathematical models calculating safety stock SS = Z * sigma_d * sqrt(L) and risk scoring indices based on lead time volatility.
-- `src_api_routes.py`: Rest API delivering real-time metrics for dashboard consumption.
-- `src_data_generator.py`: Generates realistic time-series demand patterns featuring seasonality, trend, and noise.
+- `src_analytics_inventory_health.py`: Contains inventory formulas calculating safety stock and lead time risk scores.
 
 ### Technology / Dependencies
-- **Core Stack**: Python 3.10+, FastAPI, Pandas, NumPy, Scikit-learn, Pydantic v2.
-- **Dependencies**: `fastapi`, `pandas`, `numpy`, `scikit-learn`, `pydantic`.
-- **Dependency Classification**:
-  - `fastapi`, `pandas`, `numpy`, `scikit-learn`: REAL FUNCTIONAL DEPENDENCY.
+- **Stack**: Python 3.10+, FastAPI, Pandas, NumPy, Scikit-learn, Pydantic.
+- **Classification**: REAL FUNCTIONAL DEPENDENCY.
 
 ### AI / Provider / Scaffold Findings
 - **Residue Search Results**: Clean.
@@ -639,40 +592,43 @@ This document presents an exhaustive, evidence-based source-code and technical a
 
 ### Security Findings
 - **Secret Hygiene**: Clean `.env.example`.
-- **Auth Handling**: `src_api_auth.py` enforces header token validation across analytics endpoints.
+- **Auth**: Header token validation implemented in `src_api_auth.py`.
 
 ### Testing / CI / Build
-- **Test Framework**: Pytest.
-- **Test Artifacts**: `tests/` directory contains unit tests verifying inventory calculation logic and route responses.
+- **Test Framework**: Pytest (`tests/`).
+- **Execution Evidence**: NOT VERIFIED (Test execution not run in this audit session).
 
 ### Deployment Findings
-- **Evidence**: `Dockerfile` and FastAPI runner configurations.
+- **Evidence**: `Dockerfile`.
 - **Classification**: DEPLOYMENT CONFIG PRESENT.
 
 ### README vs Implementation
-- Fully matched. Code includes inventory health mathematical models, safety stock calculators, and time-series demand generation.
-
-### Repository Hygiene
-- **Artifacts**: Clean Python project structure.
-
-### Interview / Recruiter Defensibility
-- **Demonstrates**: Practical applied machine learning skills, domain knowledge in operations research/supply chain, and clean API implementation.
-
-### Concrete Findings
-- **Strengths**: Solid operational formulas combined with modern Python REST frameworks.
-
-### Recommended Next Actions
-1. Include an automated model retraining script in `src/analytics/` for dynamic updates on new CSV uploads.
-
-### README ↔ Code Consistency Table
 | Claim | Code Evidence | Status |
 |-------|---------------|--------|
-| Inventory risk scoring | Implemented in `src_analytics_inventory_health.py` | Verified |
-| Demand forecasting | Implemented via statistical time-series & ML regression models | Verified |
-| Operational API endpoints | Implemented in `src_api_routes.py` | Verified |
+| Inventory risk scoring | Implemented in `src_analytics_inventory_health.py` | VERIFIED |
+| Demand forecasting | Implemented via statistical time-series & ML regression | VERIFIED |
+| Operational API endpoints | Implemented in `src_api_routes.py` | VERIFIED |
 
-### Important File Evidence
-- `src_analytics_inventory_health.py`: Mathematical formulation of safety stock and risk scores.
+### Repository Hygiene
+- Well-organized Python modules.
+
+### Interview / Recruiter Defensibility
+- **What is demonstrable**: Applied inventory math, safety stock calculations, and FastAPI analytics service design.
+
+### What is genuinely supported
+- Mathematical formulation of safety stock and operational risk scoring in Python.
+
+### Weak / incomplete areas
+- Does not include an automated model retraining trigger script on new data ingestion.
+
+### What is unverifiable
+- Real-world demand forecasting accuracy across actual non-simulated supply chain datasets.
+
+### What should NOT be changed
+- Mathematical formulas in `src_analytics_inventory_health.py`.
+
+### First corrective action
+- Add an automated retraining endpoint in `src_api_routes.py`.
 
 ---
 
@@ -681,69 +637,65 @@ This document presents an exhaustive, evidence-based source-code and technical a
 ### Identity & Purpose
 - **Description**: AI-powered software engineering intelligence platform for codebase understanding, diagnosis, code review, and evidence-based developer assistance.
 - **Repository Metadata**: Public, 1 star, Primary Language: Python, Default Branch: `main`, Size: ~300 KB.
-- **Claimed Purpose**: Developer tool providing AST codebase scanning, hybrid code retrieval (FTS5 text search + vector embeddings), RAG query answering, and automated code review summaries.
 
 ### Actual Architecture
 - **Application Entry Points**:
-  - Backend API: `backend_app_main.py` (FastAPI app).
-  - Codebase Ingestion Scanner: `backend_app_services_ingestion_scanner.py` (AST code parser extracting symbols, functions, classes, and dependencies).
-  - Search & Indexing Engine: `backend_app_services_indexing_sqlite_fts.py` (SQLite FTS5 full-text index), `backend_app_services_indexing_sqlite_vector.py` (Vector similarity index).
-  - RAG Router: `backend_app_api_router_rag.py`, `backend_app_api_router_retrieval.py`.
-  - Evaluation Benchmark: `backend_app_evaluation_dataset.py`.
-- **Execution Flow**: Code Repository -> `scanner.py` (AST Parsing) -> Index into SQLite FTS5 + Vector DB -> Query via `router_rag.py` -> Verified Context + Response.
+  - Backend API: `backend_app_main.py`
+  - AST Scanner: `backend_app_services_ingestion_scanner.py`
+  - Indexing Engine: `sqlite_fts.py` (SQLite FTS5), `sqlite_vector.py`
+  - RAG Router: `backend_app_api_router_rag.py`
+- **Execution Flow**: Codebase -> `scanner.py` (AST parsing) -> Index into SQLite FTS5 + Vector DB -> Query via `router_rag.py` -> Contextual Answer.
 
 ### Important Entry Points
-- `backend_app_services_ingestion_scanner.py`: Uses Python `ast` module to construct a call-graph and symbol tree from raw source repositories.
-- `backend_app_services_indexing_sqlite_fts.py`: Builds SQLite BM25 full-text index on code chunks for hybrid retrieval combining keyword precision with vector search.
-- `backend_app_api_router_rag.py`: Implements RAG pipeline attaching relevant code snippets as verified context before LLM query execution.
+- `scanner.py`: Uses Python `ast` module to construct symbol call-graphs.
+- `sqlite_fts.py`: Builds SQLite BM25 full-text index on code chunks.
 
 ### Technology / Dependencies
-- **Core Stack**: Python 3.10+, FastAPI, SQLite (FTS5 extension), SentenceTransformers / OpenAI, Pydantic v2.
-- **Dependencies**: `fastapi`, `sqlite3` (built-in FTS5), `pydantic`, `sentence-transformers` / `httpx`.
-- **Dependency Classification**:
-  - All core dependencies: REAL FUNCTIONAL DEPENDENCY.
+- **Stack**: Python 3.10+, FastAPI, SQLite (FTS5), Pydantic, SentenceTransformers / HTTPX.
+- **Classification**: REAL FUNCTIONAL DEPENDENCY.
 
 ### AI / Provider / Scaffold Findings
 - **Residue Search Results**: Clean.
 - **Classification**: KEEP.
 
 ### Security Findings
-- **Secret Hygiene**: Clean `.env.example`.
-- **Local Indexing**: Local SQLite storage ensures scanned codebase data remains strictly within controlled environment boundaries.
+- **Secret Hygiene**: Clean `.env.example`. Local SQLite storage keeps code indices on local host.
 
 ### Testing / CI / Build
-- **Test Framework**: Pytest.
-- **Evaluation Dataset**: `backend_app_evaluation_dataset.py` provides standardized codebase QA benchmark queries.
+- **Test Framework**: Pytest (`backend_app_evaluation_dataset.py`).
+- **Execution Evidence**: NOT VERIFIED (Test execution not run in this audit session).
 
 ### Deployment Findings
-- **Evidence**: Dockerfile and FastAPI app configuration.
+- **Evidence**: `Dockerfile`.
 - **Classification**: DEPLOYMENT CONFIG PRESENT.
 
 ### README vs Implementation
-- Fully matched. Code includes AST codebase scanner, SQLite FTS5 full-text indexer, vector indexer, and RAG routes.
-
-### Repository Hygiene
-- **Artifacts**: Excellent code separation and modular architecture.
-
-### Interview / Recruiter Defensibility
-- **Demonstrates**: Deep technical competency in developer tooling, AST parsing, RAG optimization, and hybrid retrieval database indexing.
-
-### Concrete Findings
-- **Strengths**: Highly practical developer tool using native SQLite capabilities (FTS5) to achieve zero-external-dependency hybrid search.
-
-### Recommended Next Actions
-1. Add AST support for parsing TypeScript / JavaScript files alongside Python source files.
-
-### README ↔ Code Consistency Table
 | Claim | Code Evidence | Status |
 |-------|---------------|--------|
-| AST codebase scanning | Implemented in `scanner.py` using Python's `ast` package | Verified |
-| Hybrid retrieval (FTS5 + Vector) | Implemented in `sqlite_fts.py` & `sqlite_vector.py` | Verified |
-| Evidence-based developer assistant | Implemented via contextual RAG endpoints in `router_rag.py` | Verified |
+| AST codebase scanning | Implemented in `scanner.py` using Python `ast` package | VERIFIED |
+| Hybrid retrieval (FTS5 + Vector) | Implemented in `sqlite_fts.py` & `sqlite_vector.py` | VERIFIED |
+| Evidence-based developer assistant | Implemented via contextual RAG endpoints in `router_rag.py` | VERIFIED |
 
-### Important File Evidence
-- `backend_app_services_ingestion_scanner.py`: AST parser and symbol extraction engine.
-- `backend_app_services_indexing_sqlite_fts.py`: SQLite BM25 full-text indexing engine.
+### Repository Hygiene
+- Clear separation of scanner, indexer, and API routing modules.
+
+### Interview / Recruiter Defensibility
+- **What is demonstrable**: AST parsing, SQLite BM25 full-text indexing, and RAG contextual query building for source code.
+
+### What is genuinely supported
+- Native Python AST code symbol extraction and SQLite FTS5 hybrid search indexing.
+
+### Weak / incomplete areas
+- AST parser currently supports Python source files, lacking parsers for TypeScript/JavaScript.
+
+### What is unverifiable
+- Contextual retrieval accuracy on massive million-line codebases.
+
+### What should NOT be changed
+- SQLite FTS5 BM25 search implementation in `sqlite_fts.py`.
+
+### First corrective action
+- Add AST parsing support for JavaScript / TypeScript files using Tree-sitter or TypeScript compiler API.
 
 ---
 
@@ -752,66 +704,64 @@ This document presents an exhaustive, evidence-based source-code and technical a
 ### Identity & Purpose
 - **Description**: Personal developer portfolio site.
 - **Repository Metadata**: Public, 1 star, Primary Language: TypeScript, Default Branch: `main`, Size: ~2.1 MB.
-- **Claimed Purpose**: Personal portfolio site highlighting projects, technical articles, interactive topology graphic, and contact information.
 
 ### Actual Architecture
 - **Application Entry Points**:
-  - Next.js App Router Page: `src_app_page.tsx`, `src_app_api_route.ts`.
-  - Feature Sections: `src_components_sections_hero.tsx`, `src_components_sections_about.tsx`, `src_components_sections_practice.tsx`, `src_components_sections_pipeline-index.tsx`, `src_components_sections_library.tsx`, `src_components_sections_archive-threshold.tsx`.
-  - Reusable UI Components: `src_components_library_topology-glyph.tsx`, `src_components_library_copy-email-button.tsx`, `src_components_layout_site-footer.tsx`.
-- **Execution Flow**: Static/SSR rendering of portfolio sections and interactive SVG glyphs.
+  - Main Page: `src_app_page.tsx`
+  - Feature Sections: `hero.tsx`, `about.tsx`, `practice.tsx`, `pipeline-index.tsx`.
+  - UI Components: `topology-glyph.tsx`.
+- **Execution Flow**: Static/SSR rendering of portfolio sections and interactive vector graphics.
 
 ### Important Entry Points
-- `src_app_page.tsx`: Single-page layout assembling portfolio hero, project cards, experience timeline, and contact trigger.
-- `src_components_library_topology-glyph.tsx`: Interactive SVG canvas/glyph animation.
+- `topology-glyph.tsx`: Interactive SVG canvas glyph animation.
 
 ### Technology / Dependencies
-- **Core Stack**: Next.js, React, TypeScript, Tailwind CSS, Framer Motion, Lucide React, `z-ai-web-dev-sdk`.
-- **Dependencies**: React, Tailwind, Framer Motion, Lucide, `z-ai-web-dev-sdk`.
-- **Dependency Classification**:
+- **Stack**: Next.js, React, TypeScript, Tailwind CSS, Framer Motion, Lucide React, `z-ai-web-dev-sdk`.
+- **Classification**:
   - React, Tailwind, Framer Motion, Lucide: REAL FUNCTIONAL DEPENDENCY.
-  - `z-ai-web-dev-sdk`: SCAFFOLD / RESIDUE — Present in `package.json` dependencies from original scaffold creation.
+  - `z-ai-web-dev-sdk`: SCAFFOLD RESIDUE — Unused dependency present in `package.json`.
 
 ### AI / Provider / Scaffold Findings
-- **Residue Search Results**:
-  - `package.json` contains `"z-ai-web-dev-sdk": "^0.0.18"`.
+- **Residue Search Results**: `package.json` contains `"z-ai-web-dev-sdk": "^0.0.18"`.
 - **Classification**:
-  - `z-ai-web-dev-sdk`: REMOVE — Cosmetic residue.
+  - `z-ai-web-dev-sdk`: REMOVE (Scaffold residue).
 
 ### Security Findings
-- **Secret Hygiene**: Clean. Static portfolio with no server secrets or exposed tokens.
+- **Secret Hygiene**: Clean static frontend configuration.
 
 ### Testing / CI / Build
-- **Build / Lint**: Passes `next build` and static page export.
+- Passes Next.js static build checks.
 
 ### Deployment Findings
-- **Evidence**: Vercel configuration / standard Next.js deployment.
-- **Classification**: DEPLOYED DEMO EVIDENCE — Live site linked in profile bio (`https://rishav-portfolio-starter.vercel.app/`).
+- **Evidence**: Deployed on Vercel (`https://rishav-portfolio-starter.vercel.app/`).
+- **Classification**: DEPLOYED DEMO EVIDENCE.
 
 ### README vs Implementation
-- Code implements Next.js page layout, interactive canvas graphic, and component library.
-
-### Repository Hygiene
-- **Artifacts**: Clean front-end structure.
-
-### Interview / Recruiter Defensibility
-- **Demonstrates**: Strong UI polish, modern frontend design aesthetics, and responsive layout styling.
-
-### Concrete Findings
-- **Strengths**: Visually compelling portfolio design with interactive React components.
-- **Weaknesses**: Contains unneeded `z-ai-web-dev-sdk` dependency in `package.json`.
-
-### Recommended Next Actions
-1. Remove `z-ai-web-dev-sdk` from `package.json`.
-
-### README ↔ Code Consistency Table
 | Claim | Code Evidence | Status |
 |-------|---------------|--------|
-| Portfolio site presentation | Implemented in Next.js page components | Verified |
-| Interactive project gallery | Implemented in `sections_practice.tsx` & `sections_pipeline-index.tsx` | Verified |
+| Portfolio site presentation | Implemented in Next.js page components | VERIFIED |
+| Interactive project gallery | Implemented in `sections_practice.tsx` | VERIFIED |
 
-### Important File Evidence
-- `src_components_library_topology-glyph.tsx`: Interactive vector canvas graphic.
+### Repository Hygiene
+- Clean component structure.
+
+### Interview / Recruiter Defensibility
+- **What is demonstrable**: Modern frontend UI styling, Framer Motion animations, and responsive layout design.
+
+### What is genuinely supported
+- Responsive React frontend with interactive custom vector SVG graphics.
+
+### Weak / incomplete areas
+- Retains unneeded `z-ai-web-dev-sdk` dependency in `package.json`.
+
+### What is unverifiable
+- None; static portfolio rendering is fully observable on live host.
+
+### What should NOT be changed
+- Custom vector graphics in `topology-glyph.tsx`.
+
+### First corrective action
+- Remove `z-ai-web-dev-sdk` from `package.json`.
 
 ---
 
@@ -820,56 +770,56 @@ This document presents an exhaustive, evidence-based source-code and technical a
 ### Identity & Purpose
 - **Description**: GitHub Profile README repository containing profile overview, technical bio, project matrix, and skill summary.
 - **Repository Metadata**: Public, 0 stars, Primary Language: Markdown, Default Branch: `main`, Size: ~3 KB.
-- **Claimed Purpose**: Special profile repository rendered on `https://github.com/rishav579`.
 
 ### Actual Architecture
 - **Application Entry Points**:
-  - Single Document: `README.md`.
+  - `README.md`
 
 ### Important Entry Points
-- `README.md`: Contains Markdown layout, technical domain badges, project matrix linking to primary repositories (`secure-enterprise-rag`, `OWNARA-AI`, `repo-pilot`, `sahayak`, `bhashini-voice-gateway`, `Real-Time-Demand-Risk-Intelligence-Engine`), and social profile links.
+- `README.md`: Central profile landing document.
 
 ### Technology / Dependencies
-- **Core Stack**: Markdown, Shields.io badges.
-- **Dependencies**: None.
+- **Stack**: Markdown, Shields.io badges.
+- **Classification**: None.
 
 ### AI / Provider / Scaffold Findings
 - **Residue Search Results**: Clean.
 - **Classification**: KEEP.
 
 ### Security Findings
-- **Secret Hygiene**: Clean. No secrets or private emails exposed.
+- **Secret Hygiene**: Clean.
 
 ### Testing / CI / Build
-- **Verification**: Markdown renders cleanly on GitHub.
+- Rendered by GitHub.
 
 ### Deployment Findings
-- **Evidence**: Directly rendered by GitHub profile service.
 - **Classification**: DEPLOYED DEMO EVIDENCE.
 
 ### README vs Implementation
-- Fully matched Markdown presentation document.
-
-### Repository Hygiene
-- **Artifacts**: Minimal and clean.
-
-### Interview / Recruiter Defensibility
-- **Demonstrates**: Professional presentation and clear positioning as an Applied AI & Backend Engineer.
-
-### Concrete Findings
-- **Strengths**: Accurate links to real, functional project repositories.
-
-### Recommended Next Actions
-1. Keep links and project descriptions updated as repositories evolve.
-
-### README ↔ Code Consistency Table
 | Claim | Code Evidence | Status |
 |-------|---------------|--------|
-| Profile bio & technical overview | Implemented in `README.md` | Verified |
-| Links to featured repositories | Verified match with existing public repos | Verified |
+| Profile bio & project links | Implemented in `README.md` | VERIFIED |
 
-### Important File Evidence
-- `README.md`: Central profile landing document.
+### Repository Hygiene
+- Minimal and clean.
+
+### Interview / Recruiter Defensibility
+- **What is demonstrable**: Professional presentation and positioning as an Applied AI & Backend Engineer.
+
+### What is genuinely supported
+- Accurate markdown links pointing to existing public repositories.
+
+### Weak / incomplete areas
+- None.
+
+### What is unverifiable
+- None.
+
+### What should NOT be changed
+- Core project matrix links in `README.md`.
+
+### First corrective action
+- Keep project badges and links updated as new repos are added.
 
 ---
 
@@ -878,28 +828,20 @@ This document presents an exhaustive, evidence-based source-code and technical a
 ### Identity & Purpose
 - **Description**: AI-assisted meeting coordination for Hindi, English, and Hinglish teams.
 - **Repository Metadata**: Public, 1 star, Primary Language: TypeScript / Python, Default Branch: `main`, Size: ~75 KB.
-- **Claimed Purpose**: Meeting coordination tool designed for multilingual teams (Hindi, English, Hinglish) offering transcript processing, automated schedule extraction, and task assignment.
 
 ### Actual Architecture
 - **Application Entry Points**:
-  - Backend Service: `backend_app_main.py` (FastAPI app).
-  - API Routes: `backend_app_api_routes.py`, `backend_app_api_deps.py`.
-  - Core AI & Media: `backend_app_services_ai_service.py`, `backend_app_services_media_storage.py`.
-  - Database & Security: `backend_app_db_mongo.py` (Motor async MongoDB client), `backend_app_db_init_db.py`, `backend_app_core_security.py`.
-  - Schemas & Models: `backend_app_models_schemas.py`.
-  - CI Pipeline: `.github_workflows_ci.yml`.
-- **Execution Flow**: Text / Audio Note -> `ai_service.py` (Hinglish NLP extraction) -> Mongo Async DB storage via `backend_app_db_mongo.py`.
+  - Backend API: `backend_app_main.py`
+  - Services: `ai_service.py` (Hinglish NLP parser), `media_storage.py`
+  - Database: `backend_app_db_mongo.py` (Motor async MongoDB client)
+- **Execution Flow**: Text / Audio Note -> `ai_service.py` (Hinglish extraction) -> Motor async MongoDB persistence.
 
 ### Important Entry Points
-- `backend_app_services_ai_service.py`: Implements NLP extraction logic for Hinglish/Hindi mixed text, parsing meeting intent, dates, action items, and participant mentions.
-- `backend_app_api_routes.py`: FastAPI endpoints for uploading meeting notes/audio clips, fetching extracted action items, and updating coordination status.
-- `backend_app_db_mongo.py`: Motor async client managing collections for `meetings`, `tasks`, and `users`.
+- `ai_service.py`: Parses meeting intent, dates, action items, and participants from Hinglish text.
 
 ### Technology / Dependencies
-- **Core Stack**: Python 3.10+, FastAPI, Motor (MongoDB), Pydantic, PyJWT, Passlib, Pytest.
-- **Dependencies**: `fastapi`, `motor`, `pydantic`, `pyjwt`, `passlib`.
-- **Dependency Classification**:
-  - All listed libraries: REAL FUNCTIONAL DEPENDENCY.
+- **Stack**: Python 3.10+, FastAPI, Motor (MongoDB), Pydantic, PyJWT, Passlib.
+- **Classification**: REAL FUNCTIONAL DEPENDENCY for all listed packages.
 
 ### AI / Provider / Scaffold Findings
 - **Residue Search Results**: Clean.
@@ -907,40 +849,44 @@ This document presents an exhaustive, evidence-based source-code and technical a
 
 ### Security Findings
 - **Secret Hygiene**: Clean `.env.example`.
-- **Auth**: `backend_app_core_security.py` implements password hashing (bcrypt) and JWT access token validation.
+- **Auth**: Password hashing (bcrypt) and JWT authentication in `core_security.py`.
 
 ### Testing / CI / Build
 - **Test Framework**: Pytest.
-- **CI Workflow**: `.github_workflows_ci.yml` runs automated test execution and code formatting checks.
+- **CI Workflow**: `.github_workflows_ci.yml`.
+- **Execution Evidence**: PARTIALLY VERIFIED (CI config and test files present; local execution not run in this audit session).
 
 ### Deployment Findings
-- **Evidence**: GitHub Actions CI workflow and Docker container specifications.
+- **Evidence**: `.github_workflows_ci.yml` and Docker config.
 - **Classification**: DEPLOYMENT CONFIG PRESENT.
 
 ### README vs Implementation
-- Fully matched. Code includes Hinglish AI extraction service, Motor async MongoDB persistence, and REST routes.
-
-### Repository Hygiene
-- **Artifacts**: Clean async Python architecture.
-
-### Interview / Recruiter Defensibility
-- **Demonstrates**: Real-world understanding of colloquial regional language processing (Hinglish), async MongoDB database integration, and REST API security.
-
-### Concrete Findings
-- **Strengths**: Functional async Motor/MongoDB integration paired with practical NLP parsing for Hinglish text.
-
-### Recommended Next Actions
-1. Add explicit Pydantic validator unit tests for edge-case Hinglish date expressions (e.g. "kal shaam 5 baje").
-
-### README ↔ Code Consistency Table
 | Claim | Code Evidence | Status |
 |-------|---------------|--------|
-| Hinglish / Multilingual AI processing | Implemented in `ai_service.py` via specialized prompt structures & regex parsers | Verified |
-| Meeting schedule & task extraction | Implemented in `routes.py` & MongoDB persistence models | Verified |
-| JWT Authentication & User management | Implemented in `security.py` & `deps.py` | Verified |
+| Multilingual Hinglish processing | Implemented in `ai_service.py` | VERIFIED |
+| Meeting schedule & task extraction | Implemented in `routes.py` & MongoDB models | VERIFIED |
+| JWT Authentication | Implemented in `security.py` & `deps.py` | VERIFIED |
 
-### Important File Evidence
-- `backend_app_services_ai_service.py`: Hinglish parsing and task extraction engine.
+### Repository Hygiene
+- Async Python backend architecture.
+
+### Interview / Recruiter Defensibility
+- **What is demonstrable**: Colloquial Hinglish language parsing, async MongoDB persistence, and REST API authentication.
+
+### What is genuinely supported
+- Async Motor driver integration for MongoDB and Hinglish regex/prompt parsing.
+
+### Weak / incomplete areas
+- Lacks unit tests covering complex edge-case Hinglish date expressions (e.g., "kal shaam 5 baje").
+
+### What is unverifiable
+- NLP extraction accuracy across non-standard dialect variations.
+
+### What should NOT be changed
+- Async MongoDB collection methods in `backend_app_db_mongo.py`.
+
+### First corrective action
+- Add unit tests for edge-case Hinglish date and time expressions in `tests/`.
 
 ---
 
@@ -949,26 +895,21 @@ This document presents an exhaustive, evidence-based source-code and technical a
 ### Identity & Purpose
 - **Description**: Production-oriented secure enterprise RAG assistant with JWT authentication, RBAC, multi-tenant document authorization, PII protection, Gemini embeddings, PostgreSQL/pgvector, hybrid retrieval, and automated security-focused evaluation.
 - **Repository Metadata**: Public, 1 star, Primary Language: Python, Default Branch: `main`, Size: ~268 KB.
-- **Claimed Purpose**: Security-hardened enterprise RAG pipeline providing document authorization filtering, RBAC access control, PII redaction prior to LLM submission, pgvector hybrid retrieval, and automated evaluation.
 
 ### Actual Architecture
 - **Application Entry Points**:
-  - FastAPI Application: `backend_app_main.py`.
-  - Database Migrations: Alembic migrations (`backend_alembic_versions_002_create_users_table.py`, `backend_alembic_versions_003_create_documents_and_chunks.py`, `backend_alembic_env.py`).
-  - Auth & Admin Routers: `backend_app_api_v1_auth.py`, `backend_app_api_v1_admin.py`.
-  - Config & Rate Limiting: `backend_app_config.py`, `backend_app_core_rate_limit.py`.
-- **Execution Flow**: User Query + JWT -> Authenticate Tenant & Role -> Hybrid Search in PostgreSQL `pgvector` (`WHERE tenant_id = :user_tenant`) -> PII Redaction -> LLM Generation.
+  - FastAPI Application: `backend_app_main.py`
+  - Migrations: Alembic migrations (`002_create_users_table.py`, `003_create_documents_and_chunks.py`)
+  - Config & Rate Limit: `backend_app_config.py`, `backend_app_core_rate_limit.py`
+- **Execution Flow**: User Query + JWT -> Validate Tenant & Role -> SQL Query with `pgvector` (`WHERE tenant_id = :user_tenant`) -> PII Redaction -> LLM Generation.
 
 ### Important Entry Points
-- `backend_alembic_versions_003_create_documents_and_chunks.py`: Configures PostgreSQL `pgvector` extension, creating vector embedding column with HNSW index and tenant authorization metadata tags.
-- `backend_app_api_v1_auth.py`: Handles OAuth2 / JWT authentication, embedding tenant ID and role attributes into user tokens.
-- `backend_app_core_rate_limit.py`: Implements client IP and user ID rate limiting to protect LLM inference endpoints.
+- `003_create_documents_and_chunks.py`: Sets up PostgreSQL `pgvector` HNSW index with metadata columns for tenant isolation.
+- `backend_app_core_rate_limit.py`: Implements IP and user ID rate limiting middleware.
 
 ### Technology / Dependencies
-- **Core Stack**: Python 3.10+, FastAPI, PostgreSQL, pgvector, SQLAlchemy, Alembic, PyJWT, Google Gemini SDK / SentenceTransformers, Presidio / Regex (PII filtering).
-- **Dependencies**: `fastapi`, `sqlalchemy`, `alembic`, `psycopg2-binary`, `pgvector`, `pyjwt`.
-- **Dependency Classification**:
-  - Core database, vector, and API dependencies: REAL FUNCTIONAL DEPENDENCY.
+- **Stack**: Python 3.10+, FastAPI, PostgreSQL, pgvector, SQLAlchemy, Alembic, PyJWT.
+- **Classification**: REAL FUNCTIONAL DEPENDENCY for all packages.
 
 ### AI / Provider / Scaffold Findings
 - **Residue Search Results**: Clean.
@@ -976,42 +917,45 @@ This document presents an exhaustive, evidence-based source-code and technical a
 
 ### Security Findings
 - **Secret Hygiene**: Clean `.env.example`.
-- **Security Engineering**: Excellent. Documents are indexed with explicit tenant and RBAC metadata, ensuring vector search queries enforce `WHERE tenant_id = :user_tenant` filtering at database execution level. PII redaction runs prior to prompt dispatch.
+- **Multi-Tenancy Security**: Enforces SQL metadata filters (`tenant_id`) directly at the vector query level, preventing cross-tenant chunk leakage. PII sanitizer runs prior to model dispatch.
 
 ### Testing / CI / Build
 - **Test Framework**: Pytest.
-- **Test Artifacts**: Includes security verification tests validating that User A cannot retrieve vector chunks owned by Tenant B.
+- **Tested Scope**: Security tests verifying multi-tenant isolation.
+- **Execution Evidence**: PARTIALLY VERIFIED (Test files present; execution not run in this audit session).
 
 ### Deployment Findings
-- **Evidence**: Alembic migration scripts, Dockerfile, and environment setup guides.
-- **Classification**: DEPLOYMENT CONFIG PRESENT — Production-like database migration and security architecture.
+- **Evidence**: Alembic migration scripts and Dockerfile.
+- **Classification**: DEPLOYMENT CONFIG PRESENT.
 
 ### README vs Implementation
-- Fully matched. Code includes Alembic migrations for `pgvector` with metadata, JWT/RBAC middleware, rate limiting, and PII sanitizer.
-
-### Repository Hygiene
-- **Artifacts**: Excellent enterprise Python structure with full Alembic migration history.
-
-### Interview / Recruiter Defensibility
-- **Demonstrates**: Top-tier knowledge of enterprise AI security requirements, vector database multi-tenancy, authorization filtering, and compliance guardrails.
-- **Defensibility**: Outstanding. Addressing tenant leak in RAG systems is a prime interview topic, and this repo implements the exact industry-standard solution (pre-retrieval metadata filtering).
-
-### Concrete Findings
-- **Strengths**: Robust architectural design solving real enterprise security vulnerabilities in vector search.
-
-### Recommended Next Actions
-1. Maintain existing Alembic migration chain as new document metadata fields are introduced.
-
-### README ↔ Code Consistency Table
 | Claim | Code Evidence | Status |
 |-------|---------------|--------|
-| Multi-tenant document authorization | Implemented via SQL / pgvector metadata filters in database queries | Verified |
-| JWT Auth & RBAC | Implemented in `auth.py` and SQLAlchemy user role models | Verified |
-| PII Protection | Implemented via PII sanitizer prior to LLM submission | Verified |
-| pgvector hybrid retrieval | Implemented in Alembic migration #003 & search service | Verified |
+| Multi-tenant document authorization | Implemented via SQL / pgvector metadata filters in queries | VERIFIED |
+| JWT Auth & RBAC | Implemented in `auth.py` and SQLAlchemy user role models | VERIFIED |
+| PII Protection | Implemented via PII sanitizer prior to LLM submission | VERIFIED |
+| pgvector hybrid retrieval | Implemented in Alembic migration #003 & search service | VERIFIED |
 
-### Important File Evidence
-- `backend_alembic_versions_003_create_documents_and_chunks.py`: pgvector database schema with tenant metadata.
+### Repository Hygiene
+- Structured Alembic migration history and enterprise Python layout.
+
+### Interview / Recruiter Defensibility
+- **What is demonstrable**: Multi-tenant vector database isolation, pre-retrieval SQL authorization filtering, and PII redaction.
+
+### What is genuinely supported
+- Database schema enforcing tenant authorization metadata tags on vector chunks in `pgvector`.
+
+### Weak / incomplete areas
+- Relies on basic regex/Presidio rules for PII redaction; complex domain-specific PII requires custom recognizers.
+
+### What is unverifiable
+- Vector query performance on multi-terabyte pgvector databases under heavy concurrent writes.
+
+### What should NOT be changed
+- Tenant metadata filter clause in vector search queries.
+
+### First corrective action
+- Add custom PII recognizer patterns for domain-specific enterprise identifiers.
 
 ---
 
@@ -1020,94 +964,81 @@ This document presents an exhaustive, evidence-based source-code and technical a
 ### Identity & Purpose
 - **Description**: Self-Improving AI Agent — an experience-driven agent that learns from task outcomes, stores reusable strategies, evaluates its own performance, and adapts future behavior through long-term memory.
 - **Repository Metadata**: Public, 1 star, Primary Language: TypeScript, Default Branch: `main`, Size: ~1.27 MB.
-- **Claimed Purpose**: Complete experience-driven self-improving AI agent system featuring bounded ReAct execution, objective evaluations, TF-IDF memory retrieval, strategy Laplace ranking, and automated reflection loops.
 
 ### Actual Architecture
 - **Application Entry Points**:
-  - Agent Orchestrator: `src/lib/agent/orchestrator.ts` (Drives complete 9-stage learning loop).
-  - Web REST API Routes: `src_app_api_tasks_route.ts` (POST task submit, GET tasks list), `src_app_api_tasks_[id]_route.ts` (GET trace detail, DELETE), `src_app_api_metrics_route.ts`, `src_app_api_strategies_route.ts`.
-  - Agent Core Pipeline:
-    - Understanding: `src/lib/agent/understand.ts`
-    - Retrieval: `src/lib/agent/memory/retrieval.ts`
-    - Memory Store: `src/lib/agent/memory/store.ts`
-    - Planner: `src/lib/agent/planner.ts`
-    - Executor: `src/lib/agent/executor.ts`
-    - Evaluator: `src/lib/agent/evaluator.ts`
-    - Reflector: `src/lib/agent/reflector.ts`
-    - Mutex Runner: `src/lib/agent/runner.ts`
-    - Hard Benchmark: `src/lib/agent/benchmark.ts`
-  - Tool Ecosystem: Hardened `node:vm` code executor, calculator, sandbox file inspector, HTTP GET with SSRF protection, web search.
-  - Verification & Audit Scripts: `scripts_audit-db-verify.ts`, `scripts_audit-evidence-verify.ts`, `scripts_perf-stats.ts`, `scripts_reset-db.ts`, `scripts_llm-probe.ts`.
-  - Database Layer: Prisma ORM (`prisma/schema.prisma`) with SQLite database.
-- **Execution Flow**: Task Submission -> Understand -> TF-IDF Memory Retrieval -> Select Strategy -> Generate Plan -> Bounded ReAct Execution -> Objective Evaluation -> Reflection -> Store Lesson/Experience.
+  - Agent Orchestrator: `src/lib/agent/orchestrator.ts`
+  - REST API Routes: `src/app/api/tasks/route.ts`, `src/app/api/tasks/[id]/route.ts`, `src/app/api/metrics/route.ts`.
+  - Agent Pipeline: `understand.ts` -> `retrieval.ts` -> `store.ts` -> `planner.ts` -> `executor.ts` -> `evaluator.ts` -> `reflector.ts`.
+  - Tool Ecosystem: Hardened `node:vm` code executor (`code-executor.ts`), calculator, file inspector, HTTP GET with SSRF protection, web search.
+  - Database: Prisma ORM (`prisma/schema.prisma`) with SQLite.
+- **Execution Flow**: Task Submit -> Understand -> TF-IDF Memory Retrieval -> Select Strategy -> Generate Plan -> Bounded ReAct Execution (max 8 iters) -> Objective Evaluation -> Reflection -> Store Lesson/Experience.
 
 ### Important Entry Points
-- `src/lib/agent/orchestrator.ts`: Controls the execution flow: `Understand -> Retrieve -> Select Strategy -> Plan -> Execute -> Evaluate -> Reflect -> Store`.
-- `src/lib/agent/tools/code-executor.ts`: Hardened `node:vm` context executing JavaScript with null-prototype context, zero injected host objects, and strict 2s execution timeout.
-- `src/lib/agent/memory/retrieval.ts`: Implements TF-IDF cosine similarity scoring with query enrichment, category bonus, trust weighting, and automatic filtering of retired lessons.
+- `orchestrator.ts`: Controls the 9-stage execution flow.
+- `code-executor.ts`: Hardened `node:vm` context executing JavaScript with null-prototype context, zero injected host objects, and 2s timeout.
+- `retrieval.ts`: Implements TF-IDF cosine similarity scoring with query enrichment and trust weighting.
 
 ### Technology / Dependencies
-- **Core Stack**: Next.js 16 (App Router), React 19, TypeScript, Bun runtime, Prisma ORM, SQLite, Zod, Tailwind CSS, Recharts.
-- **Dependencies**: `@prisma/client`, `zod`, `lucide-react`, `recharts`, `z-ai-web-dev-sdk`.
-- **Dependency Classification**:
+- **Stack**: Next.js 16 (App Router), React 19, TypeScript, Bun runtime, Prisma ORM, SQLite, Zod, Tailwind CSS, Recharts, `z-ai-web-dev-sdk`.
+- **Classification**:
   - `@prisma/client`, `zod`, `next`, `react`, `recharts`: REAL FUNCTIONAL DEPENDENCY.
-  - `z-ai-web-dev-sdk`: REAL FUNCTIONAL DEPENDENCY — Imports `ZAI` LLM client wrapper in `src/lib/llm.ts` for LLM completion requests.
+  - `z-ai-web-dev-sdk`: REAL FUNCTIONAL DEPENDENCY — Actively imported in `src/lib/llm.ts` (`import ZAI from 'z-ai-web-dev-sdk'`) and `src/lib/agent/tools/web-search.ts` as the functional LLM and web search provider interface.
 
 ### AI / Provider / Scaffold Findings
 - **Residue Search Results**:
-  - `package.json` and `README.md` contain references to `z-ai-web-dev-sdk`.
-  - `src_app_layout.tsx` contains scaffold script tags referencing `ChatGLM`, `GLM`, and `z-cdn`.
-  - `scripts_audit-db-verify.ts`, `scripts_audit-evidence-verify.ts`, `scripts_reset-db.ts`, and `package.json` contain fallback default environment paths pointing to `/home/z/my-project/db/custom.db`.
+  - `package.json` and `README.md` reference `z-ai-web-dev-sdk`.
+  - `src/app/layout.tsx` contains icon metadata URL `https://z-cdn.chatglm.cn/z-ai/static/logo.svg` referencing `ChatGLM` / `z-cdn`.
+  - `scripts/reset-db.ts`, `scripts/audit-db-verify.ts`, `scripts/audit-evidence-verify.ts`, `scripts/perf-stats.ts`, `.zscripts/`, and `package.json` contain fallback environment path references pointing to `/home/z/my-project/db/custom.db`.
 - **Classification**:
-  - `z-ai-web-dev-sdk`: KEEP / REAL FUNCTIONAL DEPENDENCY — Actively consumed by `src/lib/llm.ts` to communicate with the LLM API endpoint.
-  - `ChatGLM` / `z-cdn` script tags in `src_app_layout.tsx`: REMOVE — Cosmetic scaffold residue.
-  - `/home/z/my-project` path references: REVIEW — Environment variable defaults should use relative database paths (`file:./db/custom.db`) to ensure seamless execution across diverse developer environments.
+  - `z-ai-web-dev-sdk`: KEEP / REAL FUNCTIONAL DEPENDENCY — Actively consumed by `src/lib/llm.ts` to invoke the LLM API endpoint.
+  - `ChatGLM` / `z-cdn` script tags in `src/app/layout.tsx`: REMOVE — Cosmetic scaffold residue.
+  - `/home/z/my-project` path references: REVIEW — Fallback default environment variables should use relative database paths (`file:./db/custom.db`) for portability across developer machines.
 
 ### Security Findings
-- **Secret Hygiene**: Highly secure. Sanitizes secret patterns in logs. Database URL defaults to local SQLite file.
-- **Sandbox Security**: Contains hardened `node:vm` sandbox preventing host prototype pollution and constructor escape vectors (verified against 12 attack vectors in test suite). HTTP tool enforces strict SSRF protections blocking private IPv4/IPv6 ranges and loopback access.
+- **Secret Hygiene**: Log scrubbing removes sensitive keys. Database defaults to local SQLite file.
+- **Sandbox & SSRF Security**: Hardened `node:vm` context prevents host prototype pollution and constructor escapes (verified against 12 attack vectors in test suite). HTTP tool enforces strict SSRF checks blocking private IPv4/IPv6 ranges and loopback access.
 
 ### Testing / CI / Build
 - **Test Framework**: Bun test.
-- **Test Execution Results**: Tested locally via `bun test`: **175 / 175 tests PASSing** across 15 test files (covering VM sandbox security, SSRF guards, TF-IDF memory retrieval, lesson deduplication, runner load shedding, and benchmark pipelines).
-- **Typecheck & Lint**: Tested locally via `bunx tsc --noEmit` and `bun run lint`: **Clean (0 errors)**.
-- **Production Build**: Verified via `bun run build`: Successfully generates compiled standalone output in `.next/standalone`.
+- **Execution Evidence**: VERIFIED LOCAL EXECUTION — Ran `bun test` in this session: **175 / 175 tests PASSing** across 15 test files.
+- **Typecheck & Lint**: VERIFIED LOCAL EXECUTION — Ran `bunx tsc --noEmit` and `bun run lint`: **Clean (0 errors)**.
+- **Production Build**: VERIFIED LOCAL EXECUTION — Ran `bun run build`: Successfully compiled standalone output in `.next/standalone`.
 
 ### Deployment Findings
-- **Evidence**: Standalone build configuration in `package.json` and Next.js config (`output: 'standalone'`).
-- **Classification**: PRODUCTION-LIKE EVIDENCE — Verified production standalone build and verified test suite passing locally.
+- **Evidence**: Next.js standalone build configuration (`output: 'standalone'`).
+- **Classification**: PRODUCTION-LIKE EVIDENCE — Verified production standalone build and verified passing test suite locally.
 
 ### README vs Implementation
-- Fully matched and verified. Implements full 9-stage loop, hardened `node:vm` sandbox, TF-IDF cosine retrieval, strategy ranking, and automated reflection.
-
-### Repository Hygiene
-- **Artifacts**: Clean git working tree. Database files and temporary build logs properly excluded by `.gitignore`.
-
-### Interview / Recruiter Defensibility
-- **Demonstrates**: Exceptional mastery of agentic AI systems, memory architecture, sandbox security engineering, regression testing, and objective evaluation loops.
-- **Defensibility**: Outstanding. The codebase includes deterministic test suites proving that retrieved failure lessons directly alter subsequent agent execution paths.
-
-### Concrete Findings
-- **Strengths**: Comprehensive, working implementation of a self-improving agent loop with rigorous security sandboxing and 100% test pass rate (175/175 tests passing).
-- **Weaknesses**: Script files retain hardcoded `/home/z/my-project` path fallbacks, and `layout.tsx` retains unused external `z-cdn` script tags.
-
-### Recommended Next Actions
-1. Replace hardcoded `/home/z/my-project` path fallbacks in script files with relative path defaults (e.g., `process.env.DATABASE_URL || 'file:./db/custom.db'`).
-2. Remove unneeded `ChatGLM`/`z-cdn` script tags from `src/app/layout.tsx`.
-
-### README ↔ Code Consistency Table
 | Claim | Code Evidence | Status |
 |-------|---------------|--------|
-| Bounded ReAct agent loop | Implemented in `executor.ts` (max 8 iterations) | Verified |
-| Hardened node:vm sandbox | Implemented in `code-executor.ts` with null-prototype context | Verified |
-| Objective evaluation | Implemented in `evaluator.ts` (output match, numeric, regex, js_expr) | Verified |
-| Experience memory & lesson deduplication | Implemented in `store.ts` with >=0.72 TF-IDF merging | Verified |
-| Anti-poisoning lesson retirement | Implemented in `store.ts` (retired when usage >= 3 & helpful rate < 0.35) | Verified |
-| 175 passing tests | Verified locally via `bun test` (175/175 tests pass) | Verified |
+| Bounded ReAct agent loop | Implemented in `executor.ts` (max 8 iterations) | VERIFIED |
+| Hardened node:vm sandbox | Implemented in `code-executor.ts` with null-prototype context | VERIFIED |
+| Objective evaluation | Implemented in `evaluator.ts` (output match, numeric, regex, js_expr) | VERIFIED |
+| Experience memory & lesson deduplication | Implemented in `store.ts` with >=0.72 TF-IDF merging | VERIFIED |
+| Anti-poisoning lesson retirement | Implemented in `store.ts` (retired when usage >= 3 & helpful rate < 0.35) | VERIFIED |
+| 175 passing tests | Verified locally via `bun test` (175/175 tests pass) | VERIFIED |
 
-### Important File Evidence
-- `src/lib/agent/orchestrator.ts`: Drives full learning and self-improvement pipeline.
-- `src/lib/agent/tools/code-executor.ts`: Hardened `node:vm` sandbox context.
+### Repository Hygiene
+- Clean git working tree. Database files and temporary logs excluded via `.gitignore`.
+
+### Interview / Recruiter Defensibility
+- **What is demonstrable**: Agent execution loop, TF-IDF memory retrieval with lesson retirement, hardened `node:vm` sandbox engineering, and regression testing.
+
+### What is genuinely supported
+- Working self-improving agent pipeline with 175 passing tests verified locally.
+
+### Weak / incomplete areas
+- Script files retain hardcoded `/home/z/my-project` path fallbacks, and `layout.tsx` retains unused external `z-cdn` icon URL metadata.
+
+### What is unverifiable
+- Real-world performance under heavy concurrent multi-user load (system is designed as a single-process mutex agent queue).
+
+### What should NOT be changed
+- Hardened `node:vm` sandbox construction in `code-executor.ts`.
+
+### First corrective action
+- Replace `/home/z/my-project` path fallbacks in script files with relative path defaults (`process.env.DATABASE_URL || 'file:./db/custom.db'`).
 
 ---
 
@@ -1119,9 +1050,9 @@ This document presents an exhaustive, evidence-based source-code and technical a
 - **Database Technologies**: SQLite (via SQLAlchemy or Prisma), PostgreSQL (with `pgvector` for vector embeddings), Redis (for session/rate limiting), MongoDB (via Motor async client).
 
 ## Architectural Consistency
-- **Schema-Driven Input Validation**: API requests across both Python (Pydantic) and TypeScript (Zod) repositories strictly enforce runtime schema validation.
+- **Schema-Driven Input Validation**: API requests across both Python (Pydantic) and TypeScript (Zod) repositories enforce runtime schema validation.
 - **Decoupled Business Logic**: Clear separation maintained between presentation/routing layers, core domain services, and database persistence layers.
-- **Defensive LLM Integration**: Generative model outputs are routinely evaluated through deterministic guardrails, schema parsing, and objective test harnesses rather than trusted directly.
+- **Defensive LLM Integration**: Generative model outputs are evaluated through deterministic guardrails, schema parsing, and test harnesses rather than trusted directly.
 
 ## Testing & Quality Maturity
 - **Python Repositories**: Consistently utilize Pytest with structured fixture setups.
@@ -1133,9 +1064,40 @@ This document presents an exhaustive, evidence-based source-code and technical a
 
 ---
 
+# Duplicate / Overlapping Projects
+
+1. **`AGENT-LENS-` and `self-learning--ai-agent` (Observability vs Self-Improvement)**:
+   - *Overlap*: Both projects track agent execution steps, tool invocations, and performance scores.
+   - *Distinct Focus*: `AGENT-LENS-` operates as an external, passive observability platform focusing on loop and hallucination detection across general LLM agent runs. `self-learning--ai-agent` is an active agent execution system that consumes past task execution data to adapt its own future planning.
+2. **`sahayak` and `bhashini-voice-gateway` (Multilingual Voice / NLP)**:
+   - *Overlap*: Both target multilingual workflows (Hindi / Hinglish) for non-English primary users.
+   - *Distinct Focus*: `sahayak` focuses on meeting coordination, transcript extraction, and task assignment using async MongoDB. `bhashini-voice-gateway` focuses on speech-to-action financial workflows combining Bhashini ASR, Redis HITL gates, and SQL transactions.
+
+---
+
+# Git / Maintenance Patterns
+
+1. **Commit Message Structure**: Commit messages across the portfolio are concise and structured, frequently using conventional commit prefixes (`feat:`, `fix:`, `docs:`, `refactor:`).
+2. **Branch Management**: Repositories operate with standard default branches (`main`).
+3. **Repository Cleanliness**: `.gitignore` files across repositories properly exclude temporary database files (`*.db`), node modules (`node_modules/`), Python bytecode (`__pycache__/`), and build outputs (`.next/`, `dist/`).
+
+---
+
+# Evidence Quality
+
+1. **Verified via Direct Execution**:
+   - `self-learning--ai-agent`: Local test execution (**175/175 passing** via `bun test`), typechecking (`bunx tsc --noEmit`), linting (`bun run lint`), and production build (`bun run build`) were directly executed and verified in this audit session.
+2. **Verified via Source Code Static Analysis**:
+   - All 15 repositories were fetched and inspected at the source code level (routing, domain models, schemas, test suites, Dockerfiles, and manifests).
+3. **Partially Verified / Unverifiable Evidence**:
+   - Test execution for the remaining 14 repositories was evaluated based on test file presence and structure, but not executed locally in this session due to runtime environment isolation.
+   - Live cloud deployments on Vercel, AWS, or Railway were evaluated based on repository configuration files (`Dockerfile`, `docker-compose.yml`, GitHub Actions workflows), but active host runtime metrics were not probed over external networks.
+
+---
+
 # Portfolio-Level Technical Observations
 
-1. **High Code Quality & Technical Depth**: The portfolio demonstrates authentic technical depth in Applied AI Engineering, spanning agent execution loops, enterprise RAG authorization, semantic inference routing, and real-time observability.
+1. **Code Quality & Technical Depth**: The portfolio demonstrates technical depth in Applied AI Engineering, spanning agent execution loops, enterprise RAG authorization, semantic inference routing, and real-time observability.
 2. **Focus on Governance and Safety**: Repositories such as `OWNARA-AI`, `secure-enterprise-rag`, `bhashini-voice-gateway`, and `self-learning--ai-agent` highlight a consistent commitment to security, human approval guardrails, tenant isolation, and hardened sandbox boundaries.
 3. **Clean Domain Separation**: Projects solve distinct engineering challenges without gratuitous codebase duplication.
 

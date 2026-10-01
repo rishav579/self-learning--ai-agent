@@ -2,7 +2,7 @@
  * Wipe all runtime data (tasks, memory, benchmark runs) for a clean
  * experiment. Run: bun run scripts/reset-db.ts
  */
-process.env.DATABASE_URL = 'file:/home/z/my-project/db/custom.db'
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'file:./db/custom.db'
 
 import { db } from '@/lib/db'
 

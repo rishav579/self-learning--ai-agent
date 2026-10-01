@@ -17,9 +17,6 @@ export const metadata: Metadata = {
   description:
     "A demonstrable experience-driven learning loop: tasks → memory retrieval → planning → tool use → objective evaluation → reflection → lessons → strategy statistics → measurable improvement.",
   keywords: ["AI agent", "self-improving agent", "reflection", "experience memory", "strategy learning"],
-  icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
-  },
 };
 
 export default function RootLayout({

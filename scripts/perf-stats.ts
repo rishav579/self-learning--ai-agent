@@ -1,4 +1,4 @@
-process.env.DATABASE_URL = 'file:/home/z/my-project/db/custom.db'
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'file:./db/custom.db'
 import { db } from '@/lib/db'
 async function main() {
   const tasks = await db.task.findMany({

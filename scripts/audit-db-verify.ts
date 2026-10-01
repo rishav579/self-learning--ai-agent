@@ -1,7 +1,7 @@
 // Release audit: verify DB benchmark records match README claims (read-only)
 import { PrismaClient } from "@prisma/client";
 
-const db = new PrismaClient({ datasources: { db: { url: "file:/home/z/my-project/db/custom.db" } } });
+const db = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL || "file:./db/custom.db" } } });
 
 const runs = await db.benchmarkRun.findMany({
   orderBy: { createdAt: "asc" },
