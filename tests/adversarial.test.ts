@@ -374,7 +374,7 @@ describe('adversarial: http_get SSRF protection', () => {
 // ---------------------------------------------------------------------------
 
 describe('adversarial: file_inspector traversal', () => {
-  const escapes = ['../.env', '../../etc/passwd', 'notes.txt/../../.env', '/etc/passwd', 'config/../../../prisma/schema.prisma', '..\\..\\etc\\passwd', 'config/../../../../home/z/my-project/.env']
+  const escapes = ['../.env', '../../etc/passwd', 'notes.txt/../../.env', '/etc/passwd', 'config/../../../prisma/schema.prisma', '..\\..\\etc\\passwd', 'config/../../../../etc/shadow']
   for (const p of escapes) {
     test(`blocks traversal: ${p}`, async () => {
       let threw = false
